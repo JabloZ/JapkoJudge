@@ -1,0 +1,20 @@
+services:
+  judge-jackend:
+    build: ./src/backend
+    container_name: judge-backend
+    working_dir: /app
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./src/backend:/app
+    command: sh -c "dotnet run --project WebBackend"
+  judge-frontend:
+    build: ./src/frontend
+    container_name: judge-frontend
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    command: npm run dev
