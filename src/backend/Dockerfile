@@ -3,5 +3,6 @@ WORKDIR /app
 COPY WebBackend/WebBackend.csproj /app/
 RUN dotnet restore
 COPY . /app/
-EXPOSE 5000
-CMD ["dotnet","watch","run"]
+ENV ASPNETCORE_URLS=http://0.0.0.0:8001
+EXPOSE 8001
+CMD ["dotnet", "watch" ,"run", "--no-launch-profile"]

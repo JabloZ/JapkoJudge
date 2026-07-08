@@ -3,3 +3,4 @@ obj/
 *.sln
 .next/
 node_modules/
+todo

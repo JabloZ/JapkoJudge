@@ -3,6 +3,8 @@ services:
     build: ./src/backend
     container_name: judge-backend
     working_dir: /app
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8001
     ports:
       - "8001:8001"
     volumes:
