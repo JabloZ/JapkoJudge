@@ -4,3 +4,4 @@ obj/
 .next/
 node_modules/
 todo
+.env

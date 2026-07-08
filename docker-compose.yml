@@ -1,5 +1,5 @@
 services:
-  judge-jackend:
+  judge-backend:
     build: ./src/backend
     container_name: judge-backend
     working_dir: /app
@@ -9,7 +9,7 @@ services:
       - "8001:8001"
     volumes:
       - ./src/backend:/app
-    command: sh -c "dotnet run --project WebBackend"
+    command: sh -c "dotnet run --project WebBackend --no-launch-profile"
   judge-frontend:
     build: ./src/frontend
     container_name: judge-frontend
@@ -23,3 +23,13 @@ services:
     environment:
       NODE_ENV: development
     command: npm run dev
+  judge-db:
+    build: ./src/db
+    container_name: judge-db
+    working_dir: /app
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5435:5432"
