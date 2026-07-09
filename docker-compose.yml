@@ -5,11 +5,13 @@ services:
     working_dir: /app
     environment:
       - ASPNETCORE_URLS=http://0.0.0.0:8001
+      - ConnectionStrings__Default=Host=${DB_HOST};Port=${DB_PORT};Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
+      
     ports:
       - "8001:8001"
     volumes:
       - ./src/backend:/app
-    command: sh -c "dotnet run --project WebBackend --no-launch-profile"
+    command: sh -c "dotnet watch run --project WebBackend --no-launch-profile"
   judge-frontend:
     build: ./src/frontend
     container_name: judge-frontend
@@ -21,7 +23,7 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      NODE_ENV: development
+      - BACKEND_URL=http://judge-backend:8001
     command: npm run dev
   judge-db:
     build: ./src/db
