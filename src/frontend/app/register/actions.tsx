@@ -6,15 +6,15 @@ export async function handleRegister(prevState:any,formData:FormData){
         const password=formData.get("password") as string;
         const passwordVerify=formData.get("password-verify") as string;
         if (password.length<8){
-            return {error:"The password should be at least 8 characters long"}
+            return {success:false, message:"The password should be at least 8 characters long"}
         }
         if (password!=passwordVerify){
-            return {error:"The passwords are not the same!"}
+            return {success:false, message:"The passwords are not the same!"}
         }
 
         const emailRegex=/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         if(!emailRegex.test(email)){
-            return {error:"The email is invalid"}
+            return {success:false, message:"The email is invalid"}
         }
         
         const response=await fetch(`${process.env.BACKEND_URL}/api/register`,{
@@ -23,7 +23,7 @@ export async function handleRegister(prevState:any,formData:FormData){
             body: JSON.stringify({username,email,password})
         });
         if (!response.ok){
-            return {error:"Something went wrong"}
+            return {success:false, message:"Something went wrong"}
         }
-        return {success:true}
+        return {success:false, message:`Succesfully created account ${username}!`}
     }
