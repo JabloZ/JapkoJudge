@@ -15,6 +15,11 @@ public static class RegisterEndpoint
             {
                 return Results.BadRequest(new{message="Empty"});
             }
+            string ValidationString=await ValidateRequest(dto, db);
+            if ( ValidationString!= "success")
+            {
+                return Results.BadRequest(new{message=ValidationString});
+            }
             Console.WriteLine($"Received register form: {dto.Username}");
             var user=new User
             {
@@ -22,6 +27,7 @@ public static class RegisterEndpoint
                 Email=dto.Email,
                 
             };
+
             var hasher=new PasswordHasher<User>();
             user.PasswordHash=hasher.HashPassword(user, dto.Password);
             db.Users.Add(user);
@@ -32,14 +38,19 @@ public static class RegisterEndpoint
     }
     public static async Task<string?> ValidateRequest(RegisterDto dto, JudgeDbContext db)
     {
-        //does user exist?
-        //does email exist?
         //does the password meet minimum safety requirements (before release)
         bool usernameTaken= await db.Users.AnyAsync(u=>u.Username==dto.Username);
         if (usernameTaken == true)
         {
             return "this username is already taken. Try again";
         }
+        bool emailTaken= await db.Users.AnyAsync(u=>u.Email==dto.Email);
+        if (usernameTaken == true)
+        {
+            return "this username is already taken. Try again";
+        }
         return "success";
+
+        //TODO - FURTHER VERIFICATION AND VALIDATION (like if email is right, if password is secure etc.) also moving length check from frontend to backend
     }
 }

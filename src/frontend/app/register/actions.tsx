@@ -17,7 +17,7 @@ export async function handleRegister(prevState:any,formData:FormData){
             return {success:false, message:"The email is invalid"}
         }
         
-        const response=await fetch(`${process.env.BACKEND_URL}/api/register`,{
+        const response=await fetch(`${process.env.BACKEND_URL}/api/register`,{ //so its not hardcoded when it moves to prod
             method:"POST",
             headers: {"Content-Type":"application/json"},
             body: JSON.stringify({username,email,password})

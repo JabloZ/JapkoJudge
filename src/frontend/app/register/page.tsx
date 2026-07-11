@@ -4,7 +4,7 @@ import { handleRegister } from "./actions";
 
 export default function Register(){
     
-    const[state,formAction,isPending]=useActionState(handleRegister,null);
+    const[state,formAction,isPending]=useActionState(handleRegister,null); //we use useactionstate because we want a return from backend(so we cant just do action=handleRegister)
     return(
             <form action={formAction}>
                 

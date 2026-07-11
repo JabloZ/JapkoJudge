@@ -3,7 +3,8 @@ using WebBackend.Models;
 
 public class JudgeDbContext : DbContext
 {
-    public JudgeDbContext(DbContextOptions<JudgeDbContext> options) : base(options)
+    //magic function to make EF work
+    public JudgeDbContext(DbContextOptions<JudgeDbContext> options) : base(options) 
     {
     }
 
