@@ -1,14 +1,12 @@
-'use client';
-import { useActionState } from "react";
-import { handleLogin } from "./actions";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import LoginForm from "./LoginForm";
+export default async function LoginPage() {
+    const session = await getSession();
 
-export default function Login(){
-    const [state, formAction, isPending]=useActionState(handleLogin, null);
-    return (
-        <form action={formAction}>
-            <input type="name" name="username" placeholder="Username"/>
-            <input type="password" name="password" placeholder="Password"/>
-            <button type="submit">Submit</button>
-        </form>
-    );
+    if (session) {
+        redirect("/");
+    }
+
+    return <LoginForm/>;
 }

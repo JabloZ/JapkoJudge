@@ -15,7 +15,7 @@ public static class RegisterEndpoint
             {
                 return Results.BadRequest(new{message="Empty"});
             }
-            string ValidationString=await ValidateRequest(dto, db);
+            string? ValidationString=await ValidateRequest(dto, db);
             if ( ValidationString!= "success")
             {
                 return Results.BadRequest(new{message=ValidationString});
@@ -24,7 +24,7 @@ public static class RegisterEndpoint
             var user=new User
             {
                 Username=dto.Username,
-                Email=dto.Email,
+                Email=dto.Email
                 
             };
 

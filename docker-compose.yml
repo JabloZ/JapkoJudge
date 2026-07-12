@@ -7,6 +7,8 @@ services:
       - ASPNETCORE_URLS=http://0.0.0.0:8001
       - ConnectionStrings__Default=Host=${DB_HOST};Port=${DB_PORT};Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
       - FRONTEND_URL=http://judge-frontend:3000
+    env_file:
+      - .env
     ports:
       - "8001:8001"
     volumes:
@@ -28,10 +30,13 @@ services:
   judge-db:
     build: ./src/db
     container_name: judge-db
-    working_dir: /app
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     ports:
       - "5435:5432"
+    volumes:
+      - judge-db-data:/var/lib/postgresql/data
+volumes:
+  judge-db-data:

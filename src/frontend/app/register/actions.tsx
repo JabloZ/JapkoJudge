@@ -1,6 +1,13 @@
 'use server';
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import RegisterForm from "./RegisterForm";
 
 export async function handleRegister(prevState:any,formData:FormData){
+        const session = await getSession();
+        if (session){
+            redirect("/");
+        }
         const username=formData.get("username") as string;
         const email=formData.get("email") as string;
         const password=formData.get("password") as string;
@@ -25,5 +32,7 @@ export async function handleRegister(prevState:any,formData:FormData){
         if (!response.ok){
             return {success:false, message:"Something went wrong"}
         }
-        return {success:false, message:`Succesfully created account ${username}!`}
+        await redirect("/");
+        return {success:true, message:`Succesfully created account ${username}!`}
+        
     }
