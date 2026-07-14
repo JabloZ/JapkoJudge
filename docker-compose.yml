@@ -12,7 +12,9 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - ./src/backend:/app
+      - ./src/backend:/app'
+      - /app/obj
+      - /app/bin 
     command: sh -c "dotnet watch run --project WebBackend --no-launch-profile"
   judge-frontend:
     build: ./src/frontend

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS development
+FROM mcr.microsoft.com/dotnet/sdk:10.0.103 AS development
 WORKDIR /app
 COPY WebBackend/WebBackend.csproj /app/
 RUN dotnet restore
