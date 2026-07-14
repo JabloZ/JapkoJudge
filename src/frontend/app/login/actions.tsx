@@ -2,19 +2,41 @@
 
 import { use } from "react";
 import {cookies} from "next/headers";
-import { getSession } from "@/lib/session";
+import { getSession, requireSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 
 export async function logout() {
-    const cookieStore = await cookies();
+    const cookieStore=await cookies();
+    const token=cookieStore.get("session")?.value;
+    
+    if (token){
+        try{
+            const response=await fetch(`${process.env.BACKEND_URL}/api/logout`,{
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+            });
+            
+        }
+        catch(error){
+            console.error(`Error sending logout request ${error}`);
+        }
+    }
+    
+    
     cookieStore.delete("session");
-    redirect("/login")
+    
+    await redirect("/login");
 }
 export async function handleLogin(prevState:any, formData:FormData){
-    const session = await getSession();
+    const session = await getSession(); //block sending form if logged in
         if (session) {
             redirect("/");
+            
         }
+    
     const username=formData.get("username") as string;
     const password=formData.get("password") as string;
     const response=await fetch(`${process.env.BACKEND_URL}/api/login`,{

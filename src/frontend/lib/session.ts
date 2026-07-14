@@ -1,6 +1,6 @@
 'use server';
 import { cookies } from "next/headers";
-
+import { redirect } from "next/navigation";
 export async function getSession(){
     const cookieStore=await cookies();
     const token=cookieStore.get("session")?.value;
@@ -16,4 +16,17 @@ export async function getSession(){
         return null;
     }
     return res.json();
+}
+export async function redirectIfAuthenticated(destination="/"){
+    const session=await getSession();
+    if (session){
+        redirect(destination);
+    }
+}
+export async function requireSession(destination="/login"){
+    const session=await getSession();
+    if (!session){
+        redirect(destination);
+    }
+    return session;
 }
