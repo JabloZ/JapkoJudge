@@ -7,14 +7,16 @@ services:
       - ASPNETCORE_URLS=http://0.0.0.0:8001
       - ConnectionStrings__Default=Host=${DB_HOST};Port=${DB_PORT};Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
       - FRONTEND_URL=http://judge-frontend:3000
+      - FileStorage__UploadsPath=/app/uploads
     env_file:
       - .env
     ports:
       - "8001:8001"
     volumes:
-      - ./src/backend:/app'
+      - ./src/backend:/app
       - /app/obj
       - /app/bin 
+      - uploads-data:/app/uploads
     command: sh -c "dotnet watch run --project WebBackend --no-launch-profile"
   judge-frontend:
     build: ./src/frontend
@@ -42,3 +44,4 @@ services:
       - judge-db-data:/var/lib/postgresql/data
 volumes:
   judge-db-data:
+  uploads-data:

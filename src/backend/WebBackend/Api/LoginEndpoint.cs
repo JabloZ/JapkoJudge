@@ -60,7 +60,7 @@ public static class LoginEndpoint
             Console.WriteLine(user.TokenVersion);
             await db.SaveChangesAsync();
             return Results.Ok(new{message="Logged out"});
-        });//.RequireAuthorization();
+        }).RequireAuthorization();
     }
     private static string GenerateJwtToken(User user, IConfiguration config)
     {

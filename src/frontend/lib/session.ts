@@ -30,3 +30,11 @@ export async function requireSession(destination="/login"){
     }
     return session;
 }
+export async function getToken(){
+    const cookieStore=await cookies();
+    const token=cookieStore.get("session")?.value;
+    if (!token){
+        return null;
+    }
+    return token;
+}
