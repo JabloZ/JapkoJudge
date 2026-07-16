@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useActionState } from "react";
 import { AddLanguageHandle } from "./actions";
 export function AddLanguageForm({id}:{id: string}){
-    const actionId=AddLanguageHandle.bind(null,id);
+    const actionId=AddLanguageHandle.bind(null,id);//useactionstate calls with 2 args, so we add id before call
     const [state,formAction,isPending]=useActionState(actionId,null);
     const [selectedLanguage, setSelectedLanguage]=useState('');
     return(

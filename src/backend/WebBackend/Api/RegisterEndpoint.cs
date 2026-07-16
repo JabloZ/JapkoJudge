@@ -10,6 +10,7 @@ public static class RegisterEndpoint
         
         app.MapPost("api/register", async (RegisterDto dto, JudgeDbContext db) =>
         {
+            //todo - password and email validation, maybe in the future mail verification
             Console.WriteLine($"Received form: {dto.Username}");
             if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
             {

@@ -17,8 +17,8 @@ public class JudgeDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<Language>().HasData(
-            new Language { Id = 1, Name = "c" },
-            new Language { Id = 2, Name = "python" }
+            new Language { Id = 1, Name = "c" , Extension="c"},
+            new Language { Id = 2, Name = "python", Extension="py" }
         );
     }
 

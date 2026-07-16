@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
+using WebBackend.Migrations;
 
 public static class ChallengesEndpoint
 {
@@ -30,6 +31,7 @@ public static class ChallengesEndpoint
             return Results.Ok(challenge);
         }).RequireAuthorization();
 
+        
         app.MapPost("api/createChallenge", async([FromForm] ChallengeDto dto, ClaimsPrincipal claims, JudgeDbContext db, IConfiguration config) =>
         {
             try{
@@ -57,52 +59,62 @@ public static class ChallengesEndpoint
             {
                 return Results.BadRequest(new{message=$"Error! {err}"});
             }
-            //if error occures afterthis, you need to remove challenge from db
-            //todo - endpoint for quering languages
             
-
-            //tu chce wywolac apiaddlanguagetochallenge
-            
-            
-        }).RequireAuthorization().DisableAntiforgery();
-        app.MapPost("api/addLanguageToChallenge/{id}",async(int id, [FromForm] LanguageDto dto, JudgeDbContext db, IConfiguration config) =>
+        }).RequireAuthorization().DisableAntiforgery();//disable antiforgery is for fromform
+        //fromform because of file input
+        app.MapPost("api/addLanguageToChallenge/{id}",async(int id, [FromForm] LanguageDto dto, ClaimsPrincipal claims, JudgeDbContext db, IConfiguration config) =>
         {
-            Console.WriteLine("aaa");
-            var manifest=new ChallengeLanguage();
-            //todo - mapping with database record
-            if (dto.Language == "c")
-            {
-                manifest.LanguageId=1;
-            }
-            else
-            {
-                manifest.LanguageId=2;
-            }
-            manifest.ChallengeId=id;
-            var uploadsRoot=config["FileStorage:UploadsPath"]!;//from env
-            var challengeDir=Path.Combine(uploadsRoot,"challenges",id.ToString(),manifest.LanguageId.ToString());
-            Directory.CreateDirectory(challengeDir); 
-            
-            var startExt=Path.GetExtension(dto.Startfile.FileName);
-            var startPath=Path.Combine(challengeDir,$"start{startExt}");
-            await using(var stream = File.Create(startPath))
-            {
-                await dto.Startfile.CopyToAsync(stream);
-            }
-            manifest.StartCode=startPath;
+            //todo:
+            /*
+            check if this challenge already has this language supported
 
-            var testExt=Path.GetExtension(dto.Testfile.FileName);
-            var testPath=Path.Combine(challengeDir,$"test{testExt}");
-            await using(var stream = File.Create(testPath))
+            */
+            //
+            var challenge=await db.Challenges.FindAsync(id.ToString());
+            if (!challenge)
             {
-                await dto.Testfile.CopyToAsync(stream);
+                return Results.BadRequest(new{message="Challenge with this id doesnt exists"});
             }
-            manifest.TestfilePath=testPath;
+            if (challenge.OwnerId.ToString() != JwtRegisteredClaimNames.Sub)
+            {
+                return Results.BadRequest(new{message="You are not an author!"});
+            }
+            try{
+                var manifest=new ChallengeLanguage();
+                //todo - mapping with database record
 
-            db.ChallengesLanguages.Add(manifest);
-            await db.SaveChangesAsync();
+                var Language=await db.Languages.FirstOrDefaultAsync(l=>l.Extension==dto.Language);//not find async beacause not by id
+                manifest.LanguageId=Language.Id;
+                manifest.ChallengeId=id;
+                var uploadsRoot=config["FileStorage:UploadsPath"]!;//from env
+                var challengeDir=Path.Combine(uploadsRoot,"challenges",id.ToString(),manifest.LanguageId.ToString());
+                Directory.CreateDirectory(challengeDir); 
+                
+                var startExt=Path.GetExtension(dto.Startfile.FileName);
+                var startPath=Path.Combine(challengeDir,$"start{startExt}");//create start.*
+                await using(var stream = File.Create(startPath))
+                {
+                    await dto.Startfile.CopyToAsync(stream);
+                }
+                manifest.StartCode=startPath;
 
-            return Results.Ok(new { message = "Language added!" });
+                var testExt=Path.GetExtension(dto.Testfile.FileName);
+                var testPath=Path.Combine(challengeDir,$"test{testExt}");//create test.*
+                await using(var stream = File.Create(testPath))
+                {
+                    await dto.Testfile.CopyToAsync(stream);
+                }
+                manifest.TestfilePath=testPath;
+
+                db.ChallengesLanguages.Add(manifest);
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { message = "Language added!" });
+            }
+            catch(Exception err)
+            {
+                return Results.BadRequest(new{message=$"Error while creating: {err}"});
+            }
 
         }).RequireAuthorization().DisableAntiforgery();
     } 

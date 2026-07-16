@@ -20,6 +20,7 @@ public static class LoginEndpoint
         //TODO
         app.MapPost("api/login", async (LoginDto dto, JudgeDbContext db, IConfiguration config)=> //lambda, db and config from dependency injection
         {
+            
             string username=dto.Username;
             string password=dto.Password;
             

@@ -4,6 +4,7 @@ import { getToken } from "@/lib/session";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 export async function AddLanguageHandle(id:string, prevState:any,formData:FormData){
+    //check if viewer is author
     const session = await getSession();
         if (!session) {
             redirect("/");
@@ -34,6 +35,7 @@ export async function AddLanguageHandle(id:string, prevState:any,formData:FormDa
             method:"POST",
             headers:{
                 "Authorization":`Bearer ${token}`,
+                //no content type because file is not for json
             },
             body: ChallengeForm   
         });

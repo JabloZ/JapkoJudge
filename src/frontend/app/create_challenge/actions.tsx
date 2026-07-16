@@ -25,7 +25,7 @@ export async function SendChallengeRequest(prevState:any,formData:FormData){
             method:"POST",
             headers:{
                 "Authorization":`Bearer ${token}`
-                
+            
             },
             body: ChallengeForm   
         });
@@ -33,7 +33,6 @@ export async function SendChallengeRequest(prevState:any,formData:FormData){
         if (!response.ok){//err here
             
             const err=await response.text();
-            console.log(err);
             return {error:`Error! ${err}`}
         }
         
