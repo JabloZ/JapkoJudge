@@ -78,4 +78,5 @@ app.UseAuthentication();   //auth and auth so session tokens are properly sent, 
 app.UseAuthorization();    
 app.MapRegisterEndpoint(); //adding url endpoints 
 app.MapLoginEndpoint();
+app.MapChallengesEndpoint();
 app.Run();

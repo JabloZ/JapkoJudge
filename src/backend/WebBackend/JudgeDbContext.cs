@@ -13,4 +13,13 @@ public class JudgeDbContext : DbContext
     public DbSet<Language> Languages { get; set; }
     public DbSet<ChallengeLanguage> ChallengesLanguages { get; set; }
 
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Language>().HasData(
+            new Language { Id = 1, Name = "c" },
+            new Language { Id = 2, Name = "python" }
+        );
+    }
+
 }
