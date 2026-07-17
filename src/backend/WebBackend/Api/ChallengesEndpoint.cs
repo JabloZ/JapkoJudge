@@ -71,7 +71,7 @@ public static class ChallengesEndpoint
             */
             //
             var challenge=await db.Challenges.FindAsync(id.ToString());
-            if (!challenge)
+            if (challenge==null)
             {
                 return Results.BadRequest(new{message="Challenge with this id doesnt exists"});
             }
@@ -117,6 +117,23 @@ public static class ChallengesEndpoint
             }
 
         }).RequireAuthorization().DisableAntiforgery();
+        app.MapGet("api/users/{username}/challenges",async(string username, JudgeDbContext db, IConfiguration config) =>
+        {
+            Console.WriteLine("aa");
+            try{
+                var owner=await db.Users.FirstOrDefaultAsync(k=>k.Username==username);
+                var challenges=await db.Challenges.Where(k=>k.OwnerId==owner.Id).ToListAsync();
+                foreach(var challenge in challenges)
+                { 
+                    Console.WriteLine(challenge.Title);
+                }
+                return Results.Ok(new{message="Challenges returned", Challenges=challenges});
+            }
+            catch(Exception err)
+            {
+                return Results.BadRequest(new {message=$"Couldnt get challenges! {err}"});
+            }
+        }).RequireAuthorization();
     } 
 
     
