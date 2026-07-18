@@ -119,10 +119,21 @@ public static class ChallengesEndpoint
         }).RequireAuthorization().DisableAntiforgery();
         app.MapGet("api/users/{username}/challenges",async(string username, JudgeDbContext db, IConfiguration config) =>
         {
-            Console.WriteLine("aa");
+            
             try{
                 var owner=await db.Users.FirstOrDefaultAsync(k=>k.Username==username);
-                var challenges=await db.Challenges.Where(k=>k.OwnerId==owner.Id).ToListAsync();
+                var challenges=await db.Challenges
+                .Where(k=>k.OwnerId==owner.Id)
+                .Select(k=>new ChallengeViewDto
+                {
+                    Id=k.Id,
+                    Title=k.Title,
+                    Username=k.User!.Username,
+                    Difficulty=k.Difficulty,
+                    Description=k.Description,
+                    Verified=k.Verified
+                })
+                .ToListAsync();
                 foreach(var challenge in challenges)
                 { 
                     Console.WriteLine(challenge.Title);
@@ -135,6 +146,4 @@ public static class ChallengesEndpoint
             }
         }).RequireAuthorization();
     } 
-
-    
 }

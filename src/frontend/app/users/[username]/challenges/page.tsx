@@ -10,6 +10,10 @@ export default async function ShowChallengesPage({params}:{params:Promise<{usern
     }
     
     const{username}=await params;
-    await GetChallengesRequest({username});
-    return <ShowChallenges username={username}/>;    
+    var res=await GetChallengesRequest({username});
+    
+    if (!res.success) {
+    return <p>Couldnt get challenges: {res.error}</p>;
+    }
+    return <ShowChallenges username={username} challenges={res.challenges}/>;    
 }

@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { useActionState } from "react";
 import { GetChallengesRequest } from "./actions";
-export function ShowChallenges({username}:{username:string}){
+import { ChallengeCard, Challenge } from "@/lib/ChallengeCard";
+export function ShowChallenges({username, challenges}:{username:string, challenges:Challenge[]}){
     //const [state,formAction,isPending]=useActionState(GetChallengesRequest,null);
     return(
         <div>
-            
+            {challenges.map((challenge: Challenge)=>(
+                <ChallengeCard key={challenge.id} challenge={challenge}/>
+            ))}
         </div>
     );
 }
