@@ -31,9 +31,7 @@ export async function GetChallengesRequest({username}:{username:string}): Promis
         return {success:false,error:resp};
     }
     const data=await response.json();
-    
-    const challenges = data.Challenges ?? data.challenges ?? [];
-    
+    const challenges = data.challenges ?? [];
     
     return{success:true,challenges: challenges as Challenge[]};
 

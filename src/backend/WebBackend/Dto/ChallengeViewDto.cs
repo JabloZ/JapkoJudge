@@ -7,4 +7,5 @@ public class ChallengeViewDto
     public string Description { get; set; } = "";
     public bool Verified { get; set; }
     public string Username { get; set; } = "";
+    public bool ViewerOwner{get;set;}
 }

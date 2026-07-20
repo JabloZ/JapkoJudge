@@ -7,7 +7,7 @@ export async function getSession(){
     if (!token){
         return null;
     }
-    console.log(token);
+   
     const res=await fetch(`${process.env.BACKEND_URL}/api/me`,{
         headers:{Authorization:`Bearer ${token}`},
         cache: "no-store",

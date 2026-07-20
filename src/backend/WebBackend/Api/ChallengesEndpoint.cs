@@ -23,6 +23,7 @@ public static class ChallengesEndpoint
         //app.MapPost("api/delete")
         app.MapGet("api/challenges/{id:int}", async(int id, JudgeDbContext db) =>
         {
+          
             var challenge=await db.Challenges.FindAsync(id);
             if (challenge == null)
             {
@@ -117,11 +118,15 @@ public static class ChallengesEndpoint
             }
 
         }).RequireAuthorization().DisableAntiforgery();
-        app.MapGet("api/users/{username}/challenges",async(string username, JudgeDbContext db, IConfiguration config) =>
+        app.MapGet("api/users/{username}/challenges",async(string username, JudgeDbContext db, ClaimsPrincipal claims,IConfiguration config) =>
         {
             
             try{
+                
                 var owner=await db.Users.FirstOrDefaultAsync(k=>k.Username==username);
+                var viewerUsername=claims.FindFirstValue(JwtRegisteredClaimNames.UniqueName);
+                bool viewerOwner= owner.Username==viewerUsername;
+                
                 var challenges=await db.Challenges
                 .Where(k=>k.OwnerId==owner.Id)
                 .Select(k=>new ChallengeViewDto
@@ -131,13 +136,11 @@ public static class ChallengesEndpoint
                     Username=k.User!.Username,
                     Difficulty=k.Difficulty,
                     Description=k.Description,
-                    Verified=k.Verified
+                    Verified=k.Verified,
+                    ViewerOwner=viewerOwner
                 })
                 .ToListAsync();
-                foreach(var challenge in challenges)
-                { 
-                    Console.WriteLine(challenge.Title);
-                }
+                
                 return Results.Ok(new{message="Challenges returned", Challenges=challenges});
             }
             catch(Exception err)
@@ -145,5 +148,21 @@ public static class ChallengesEndpoint
                 return Results.BadRequest(new {message=$"Couldnt get challenges! {err}"});
             }
         }).RequireAuthorization();
+        app.MapPost("api/challenges/{id}/editGeneral",async(string id, [FromForm] ChallengeDto dto,JudgeDbContext db,IConfiguration config) =>
+        {
+            Console.WriteLine("aabbbb");
+            try
+            {
+                var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id.ToString()==id);
+                challenge.Title=dto.Title;
+                challenge.Description=dto.Description;
+                await db.SaveChangesAsync();
+                return Results.Ok(new{message="Succesfully edited challenge!"});
+            }
+            catch(Exception err)
+            {
+                return Results.BadRequest(new{message=$"Error editting! {err}"});
+            }
+        }).RequireAuthorization().DisableAntiforgery();
     } 
 }
