@@ -1,14 +1,5 @@
 import Link from "next/link";
-export type Challenge = {
-  id: number;
-  title: string;
-  difficulty: number;
-  description: string;
-  verified: boolean;
-  username: string;
-  viewerOwner: boolean;
-};
-
+import { Challenge } from "./ClassTypes";
 export function ChallengeCard({challenge}:{challenge:Challenge}){
     console.log(challenge.verified);
     console.log(challenge.viewerOwner);

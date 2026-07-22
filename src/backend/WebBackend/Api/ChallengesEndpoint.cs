@@ -21,18 +21,7 @@ public static class ChallengesEndpoint
         //app.MapGet("api/read")
         //app.MapPost("api/update")
         //app.MapPost("api/delete")
-        app.MapGet("api/challenges/{id:int}", async(int id, JudgeDbContext db) =>
-        {
-          
-            var challenge=await db.Challenges.FindAsync(id);
-            if (challenge == null)
-            {
-                return Results.NotFound(new{message=$"Challenge with id ${id} doesnt exist"});
-            }
-            return Results.Ok(challenge);
-        }).RequireAuthorization();
-
-        
+    
         app.MapPost("api/createChallenge", async([FromForm] ChallengeDto dto, ClaimsPrincipal claims, JudgeDbContext db, IConfiguration config) =>
         {
             try{
@@ -118,6 +107,26 @@ public static class ChallengesEndpoint
             }
 
         }).RequireAuthorization().DisableAntiforgery();
+        
+        app.MapPost("api/challenges/{id}/editGeneral",async(string id, [FromForm] ChallengeDto dto,JudgeDbContext db,IConfiguration config) =>
+        {
+            Console.WriteLine("aabbbb");
+            try
+            {
+                var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id.ToString()==id);
+                challenge.Title=dto.Title;
+                challenge.Description=dto.Description;
+                await db.SaveChangesAsync();
+                return Results.Ok(new{message="Succesfully edited challenge!"});
+            }
+            catch(Exception err)
+            {
+                return Results.BadRequest(new{message=$"Error editting! {err}"});
+            }
+        }).RequireAuthorization().DisableAntiforgery();
+
+
+
         app.MapGet("api/users/{username}/challenges",async(string username, JudgeDbContext db, ClaimsPrincipal claims,IConfiguration config) =>
         {
             
@@ -148,21 +157,43 @@ public static class ChallengesEndpoint
                 return Results.BadRequest(new {message=$"Couldnt get challenges! {err}"});
             }
         }).RequireAuthorization();
-        app.MapPost("api/challenges/{id}/editGeneral",async(string id, [FromForm] ChallengeDto dto,JudgeDbContext db,IConfiguration config) =>
+         app.MapGet("api/challenges/{id:int}", async(int id, JudgeDbContext db) =>
         {
-            Console.WriteLine("aabbbb");
-            try
+          
+            var challenge=await db.Challenges.FindAsync(id);
+            if (challenge == null)
             {
-                var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id.ToString()==id);
-                challenge.Title=dto.Title;
-                challenge.Description=dto.Description;
-                await db.SaveChangesAsync();
-                return Results.Ok(new{message="Succesfully edited challenge!"});
+                return Results.NotFound(new{message=$"Challenge with id ${id} doesnt exist"});
+            }
+            return Results.Ok(challenge);
+        }).RequireAuthorization();
+        
+        app.MapGet("api/challenges/{id}/returnLanguages", async(int id, JudgeDbContext db) =>
+        {
+            Console.WriteLine("a");
+            try{
+                var manifests=await db.ChallengesLanguages
+                .Where(k=>k.ChallengeId==id)
+                .Select(k=>new ManifestDto
+                {
+                    Id=k.Id,
+                    ChallengeId=k.ChallengeId,
+                    LanguageId=k.LanguageId,
+                    StartCode=k.StartCode,
+                    TestfilePath=k.TestfilePath
+                })
+                .ToListAsync();
+                foreach(ManifestDto dto in manifests)
+                {
+                    var language=await db.Languages.FirstOrDefaultAsync(k=>k.Id==dto.LanguageId);
+                    dto.LanguageName=language.Name;
+                }
+                return Results.Ok(new{message="Succesfully returned",Manifests=manifests});
             }
             catch(Exception err)
             {
-                return Results.BadRequest(new{message=$"Error editting! {err}"});
+                return Results.BadRequest(new{message="Error returning languages supported"});
             }
-        }).RequireAuthorization().DisableAntiforgery();
+        }).RequireAuthorization();
     } 
 }

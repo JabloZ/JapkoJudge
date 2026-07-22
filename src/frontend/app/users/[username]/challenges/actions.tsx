@@ -2,7 +2,7 @@
 
 import { getSession, getToken } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { Challenge } from "@/lib/ChallengeCard";
+import { Challenge } from "@/lib/ClassTypes";
 type ChallengesResult =
   | { success: true; challenges: Challenge[] }
   | { success: false; error: string };

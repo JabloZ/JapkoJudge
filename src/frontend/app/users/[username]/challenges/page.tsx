@@ -15,5 +15,6 @@ export default async function ShowChallengesPage({params}:{params:Promise<{usern
     if (!res.success) {
     return <p>Couldnt get challenges: {res.error}</p>;
     }
+    
     return <ShowChallenges username={username} challenges={res.challenges}/>;    
 }
