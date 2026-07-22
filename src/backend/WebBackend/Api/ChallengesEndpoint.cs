@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using WebBackend.Migrations;
-
+using System.IO;
 public static class ChallengesEndpoint
 {
     public static void MapChallengesEndpoint(this IEndpointRouteBuilder app) 
@@ -60,16 +60,18 @@ public static class ChallengesEndpoint
 
             */
             //
-            var challenge=await db.Challenges.FindAsync(id.ToString());
+            
+            var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id==id);
             if (challenge==null)
             {
                 return Results.BadRequest(new{message="Challenge with this id doesnt exists"});
             }
-            if (challenge.OwnerId.ToString() != JwtRegisteredClaimNames.Sub)
+            if (challenge.OwnerId.ToString() != claims.FindFirstValue(JwtRegisteredClaimNames.Sub))
             {
                 return Results.BadRequest(new{message="You are not an author!"});
             }
             try{
+
                 var manifest=new ChallengeLanguage();
                 //todo - mapping with database record
 
@@ -97,6 +99,7 @@ public static class ChallengesEndpoint
                 manifest.TestfilePath=testPath;
 
                 db.ChallengesLanguages.Add(manifest);
+                
                 await db.SaveChangesAsync();
 
                 return Results.Ok(new { message = "Language added!" });
@@ -108,14 +111,19 @@ public static class ChallengesEndpoint
 
         }).RequireAuthorization().DisableAntiforgery();
         
-        app.MapPost("api/challenges/{id}/editGeneral",async(string id, [FromForm] ChallengeDto dto,JudgeDbContext db,IConfiguration config) =>
+        app.MapPost("api/challenges/{id}/editGeneral",async(string id, [FromForm] ChallengeDto dto,JudgeDbContext db,IConfiguration config, ClaimsPrincipal claims) =>
         {
-            Console.WriteLine("aabbbb");
+            
             try
             {
                 var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id.ToString()==id);
+                if (challenge.OwnerId.ToString() != claims.FindFirstValue(JwtRegisteredClaimNames.Sub))
+                {
+                    return Results.BadRequest(new{message="You are not an author!"});
+                }
                 challenge.Title=dto.Title;
                 challenge.Description=dto.Description;
+                challenge.Verified=false;
                 await db.SaveChangesAsync();
                 return Results.Ok(new{message="Succesfully edited challenge!"});
             }
@@ -124,8 +132,67 @@ public static class ChallengesEndpoint
                 return Results.BadRequest(new{message=$"Error editting! {err}"});
             }
         }).RequireAuthorization().DisableAntiforgery();
+        //}/api/challenges/${id}/editLanguage/${language_id}
+        app.MapPost("api/challenges/{id}/editLanguage/{language_id}",async(int id, int language_id,[FromForm] LanguageDto dto, ClaimsPrincipal claims, JudgeDbContext db, IConfiguration config) =>
+        {
+            //todo - delete old 
+            var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id==id);
+            if (challenge==null)
+            {
+                return Results.BadRequest(new{message="Challenge with this id doesnt exists"});
+            }
+            if (challenge.OwnerId.ToString() !=  claims.FindFirstValue(JwtRegisteredClaimNames.Sub))
+            {
+                return Results.BadRequest(new{message="You are not an author!"});
+            }
+            try{
 
+                var manifest=await db.ChallengesLanguages.FirstOrDefaultAsync(k=>k.ChallengeId==id && k.LanguageId==language_id);
+                //todo - mapping with database record
+                string startcodePath=manifest.StartCode; 
+                if (File.Exists(startcodePath))
+                {
+                    File.Delete(startcodePath);
+                }
+                string testcodePath=manifest.TestfilePath; 
+                if (File.Exists(testcodePath))
+                {
+                    File.Delete(testcodePath);
+                }
+                var Language=await db.Languages.FirstOrDefaultAsync(l=>l.Id.ToString()==dto.Language);
+                manifest.LanguageId=Language.Id;
+                manifest.ChallengeId=id;
+                var uploadsRoot=config["FileStorage:UploadsPath"]!;//from env
+                var challengeDir=Path.Combine(uploadsRoot,"challenges",id.ToString(),manifest.LanguageId.ToString());
+                Directory.CreateDirectory(challengeDir); 
+                
+                var startExt=Path.GetExtension(dto.Startfile.FileName);
+                var startPath=Path.Combine(challengeDir,$"start{startExt}");//create start.*
+                await using(var stream = File.Create(startPath))
+                {
+                    await dto.Startfile.CopyToAsync(stream);
+                }
+                manifest.StartCode=startPath;
 
+                var testExt=Path.GetExtension(dto.Testfile.FileName);
+                var testPath=Path.Combine(challengeDir,$"test{testExt}");//create test.*
+                await using(var stream = File.Create(testPath))
+                {
+                    await dto.Testfile.CopyToAsync(stream);
+                }
+                manifest.TestfilePath=testPath;
+
+                manifest.Verified=false;
+                await db.SaveChangesAsync();
+
+                return Results.Ok(new { message = "Language added!" });
+            }
+            catch(Exception err)
+            {
+                return Results.BadRequest(new{message=$"Error while creating: {err}"});
+            }
+
+        }).RequireAuthorization().DisableAntiforgery();
 
         app.MapGet("api/users/{username}/challenges",async(string username, JudgeDbContext db, ClaimsPrincipal claims,IConfiguration config) =>
         {
@@ -170,7 +237,7 @@ public static class ChallengesEndpoint
         
         app.MapGet("api/challenges/{id}/returnLanguages", async(int id, JudgeDbContext db) =>
         {
-            Console.WriteLine("a");
+            
             try{
                 var manifests=await db.ChallengesLanguages
                 .Where(k=>k.ChallengeId==id)
@@ -193,6 +260,28 @@ public static class ChallengesEndpoint
             catch(Exception err)
             {
                 return Results.BadRequest(new{message="Error returning languages supported"});
+            }
+        }).RequireAuthorization();
+        app.MapGet("api/challenges/{id}/language/{language_id}/supportInfo", async(int id, int language_id, JudgeDbContext db) =>
+        {
+            
+            try{
+                var manifest=await db.ChallengesLanguages.Where(k=>k.ChallengeId==id && k.LanguageId==language_id)
+                .Select(k=>new ManifestDto
+                {
+                    Id=k.Id,
+                    ChallengeId=k.ChallengeId,
+                    LanguageId=k.LanguageId,
+                    StartCode=k.StartCode,
+                    TestfilePath=k.TestfilePath
+                }).FirstOrDefaultAsync();
+                var language=await db.Languages.FirstOrDefaultAsync(k=>k.Id==language_id);
+                manifest.LanguageName=language.Name;
+                return Results.Ok(new{message="Succesfully returned",Manifest=manifest});
+            }
+            catch(Exception err)
+            {
+                return Results.BadRequest(new{message="Error returning language support"});
             }
         }).RequireAuthorization();
     } 

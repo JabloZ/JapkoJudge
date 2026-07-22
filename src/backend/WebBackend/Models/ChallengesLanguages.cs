@@ -16,4 +16,5 @@ public class ChallengeLanguage{
 
     public string StartCode{get;set;}="";
     public string TestfilePath{get;set;}="";
+    public bool Verified{get;set;}
 }

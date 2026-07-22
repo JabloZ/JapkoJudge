@@ -12,8 +12,10 @@ export default function ViewLanguages({id,manifests}:{id:string, manifests:Manif
         
         <div>
             {manifests.map((manifest:Manifest)=>(
-                            <Link href={`languages/${manifest.languageId}/edit`}>{manifest.languageName}</Link>
+                            <Link href={`languages/${manifest.languageId}/edit`} key={manifest.id}>{manifest.languageName}</Link>
             ))}
+            <br></br>
+            <Link href={`/update_challenge/add_language/${id}`}>Add language support</Link>
         </div>
     )
 }
