@@ -8,4 +8,5 @@ public class ManifestDto
     public string StartCode { get; set; }="";
     public string TestfilePath { get; set; } = "";
     public string LanguageName{get;set;}="";
+    public string AuthorId{get;set;}="";
 }

@@ -22,3 +22,4 @@ export function EditLanguageForm({id, language_id}:{id: string, language_id:stri
         </div>
     );
 }
+

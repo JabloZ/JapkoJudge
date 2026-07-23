@@ -17,7 +17,7 @@ services:
       - /app/obj
       - /app/bin 
       - uploads-data:/app/uploads
-    command: sh -c "dotnet watch run --project WebBackend --no-launch-profile"
+    command: sh -c "dotnet watch run --non-interactive --project WebBackend --no-launch-profile"
   judge-frontend:
     build: ./src/frontend
     container_name: judge-frontend

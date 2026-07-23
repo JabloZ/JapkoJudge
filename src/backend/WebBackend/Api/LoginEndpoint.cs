@@ -44,7 +44,8 @@ public static class LoginEndpoint
         app.MapGet("api/me", (ClaimsPrincipal user) => //is user logged in? works with getSession
         {
             var username=user.FindFirstValue(JwtRegisteredClaimNames.UniqueName);
-            return Results.Ok(new{username});
+            var id=user.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            return Results.Ok(new{username,id});
         }).RequireAuthorization();  
         
          

@@ -14,4 +14,5 @@ export type Manifest={
     startCode:string;
     testfilePath:string;
     languageName:string;
+    authorId:number;
 };

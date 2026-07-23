@@ -36,3 +36,38 @@ export async function GetChallengesRequest({username}:{username:string}): Promis
     return{success:true,challenges: challenges as Challenge[]};
 
 }
+
+export async function DeleteChallengeHandle(id:string, path:string){
+    const session = await getSession();
+        if (!session) {
+            redirect("/");
+        }
+    const token=await getToken();
+    if (!token){
+        return {error:"no token"};
+    }
+    
+    try{
+       
+        const response=await fetch(`${process.env.BACKEND_URL}/api/challenges/${id}/deleteChallenge`,{
+            method:"POST",
+            headers:{
+                "Authorization":`Bearer ${token}`
+            }
+        });
+        if (!response.ok){
+            const err=await response.text();
+            
+            return {error:`Error! ${err}`}
+        }
+        
+        const data=await response.json();
+        
+        
+        //return {success: true, data};
+    }
+    catch(err){
+        return {error: "Error: "+ (err as Error).message}
+    }
+    redirect(path);
+}

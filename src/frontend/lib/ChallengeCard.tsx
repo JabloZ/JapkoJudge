@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Challenge } from "./ClassTypes";
+import { DeleteChallengeForm } from "@/app/users/[username]/challenges/ShowChallenges";
 export function ChallengeCard({challenge}:{challenge:Challenge}){
-    console.log(challenge.verified);
-    console.log(challenge.viewerOwner);
+    
     return(
         <div>
             <p>{challenge.id}</p>
@@ -12,6 +12,7 @@ export function ChallengeCard({challenge}:{challenge:Challenge}){
                 <div>
                     <Link href={`/challenge/${challenge.id}/edit_general`}>Edit general</Link>
                     <Link href={`/challenge/${challenge.id}/languages`}>Languages support</Link>
+                    <DeleteChallengeForm key={'d'+challenge.id} id={challenge.id.toString()}/>
                 </div>
             )}
             <p>___</p>

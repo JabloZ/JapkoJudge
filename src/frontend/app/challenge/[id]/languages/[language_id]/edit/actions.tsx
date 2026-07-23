@@ -3,6 +3,7 @@
 import { getToken } from "@/lib/session";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+
 export async function EditLanguageHandle(id:string, language:string, prevState:any,formData:FormData){
     //check if viewer is author
     const session = await getSession();
@@ -43,6 +44,7 @@ export async function EditLanguageHandle(id:string, language:string, prevState:a
             return {error:`Error! ${response.status}`}
         }
         const data=await response.json();
+        
         return {success: true, data};
     }
     catch(err){
