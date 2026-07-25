@@ -12,9 +12,8 @@ export default async function Home(){
 
     return <div>Witaj, {session.username}!
     <div>
-      <Link href={"/login"}>Login</Link>
-      <Link href={"/register"}>Register</Link>
-      <Link href={"/create_challenge"}>Create Challenge</Link>  
+      <Link href={"/create_challenge"}>Create Challenge</Link>|
+      <Link href={`users/${session.username}/challenges`}>Your challenges</Link>
       <form action={logout}>
         <button type="submit">Logout</button>
       </form>

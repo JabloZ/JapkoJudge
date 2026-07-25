@@ -8,6 +8,7 @@ export function ChallengeCard({challenge}:{challenge:Challenge}){
             <p>{challenge.id}</p>
             <p>{challenge.title}</p>
             <p>{challenge.username}</p>
+            <Link href={`/challenge/${challenge.id}`}>Open challenge</Link>
             {challenge.viewerOwner &&(
                 <div>
                     <Link href={`/challenge/${challenge.id}/edit_general`}>Edit general</Link>
