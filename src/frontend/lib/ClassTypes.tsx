@@ -16,3 +16,13 @@ export type Manifest={
     languageName:string;
     authorId:number;
 };
+export type Submission={
+    id: number;
+    ownerId:number;
+    manifestId: number;
+    code:string;
+    status:string;
+    message:string;
+    memoryused:number;
+    executionTime:number;
+};

@@ -79,4 +79,5 @@ app.UseAuthorization();
 app.MapRegisterEndpoint(); //adding url endpoints 
 app.MapLoginEndpoint();
 app.MapChallengesEndpoint();
+app.MapSubmissionsEndpoint();
 app.Run();

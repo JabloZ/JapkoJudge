@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { GetChallengeRequest, GetLanguagesSupported } from "./actions";
-import { SubmitAnswer } from "./SubmitAnswer";
+import  SubmitAnswer  from "./SubmitAnswer";
 
 export default async function ShowChallengePage({params}:{params:Promise<{id:string}>}) {
     //todo: check if viewer is author

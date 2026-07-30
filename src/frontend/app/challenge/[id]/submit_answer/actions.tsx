@@ -75,6 +75,36 @@ export async function GetLanguagesSupported({id}:{id:string}): Promise<Languages
 }
 
 
-export async function HandleAnswerPost(){
+export async function HandleAnswerPost(id:string,prevState:any,formData:FormData){
+      const session = await getSession();
+    if (!session) {
+        redirect("/");
+    }
+    const token=await getToken();
+    if(!token){
+        return {success:false,error:"no token"};
+    }
+    const code=formData.get("code");
+    const languageName=formData.get("language");
     
+    const response=await fetch(`${process.env.BACKEND_URL}/api/submissions/add/challenge/${id}`,{
+        method:"POST",
+        headers:{
+            "Authorization":`Bearer ${token}`,
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({code,languageName})
+    });
+    
+    if (!response.ok){
+        
+        const resp=await response.text();
+        return {success:false,error:resp};
+    }
+    
+    
+    const data=await response.json();
+    
+    
+    return{success:true};
 }
