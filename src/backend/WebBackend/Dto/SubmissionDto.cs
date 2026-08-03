@@ -11,5 +11,7 @@ public class SubmissionDto
     public string Message{get;set;}="";
     public int MemoryUsed{get;set;}
     public int ExecutionTime{get;set;}
+    public int ChallengeId{get;set;}
+    public string ChallengeTitle{get;set;}="";
 
 }
