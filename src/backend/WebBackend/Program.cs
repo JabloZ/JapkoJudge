@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
-
+using WebBackend.Code;
 var builder = WebApplication.CreateBuilder(args);
 
 /*
@@ -63,6 +63,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
             }
         }
     };
+});
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var volumeName = config["FileStorage:UploadsVolumeName"] ?? "uploads-data";
+    return new DockerCodeRunner(volumeName);
 });
 
 builder.Services.AddAuthorization();

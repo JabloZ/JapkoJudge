@@ -18,6 +18,7 @@ export default function SubmitAnswer({challenge,manifests}:{challenge:Challenge,
             <p>Challenge #{challenge.id}: {challenge.title}</p>
             <select name="language" id="language" value={selectedLanguage} onChange={(e)=>setSelectedLanguage(e.target.value)}>
                     {(manifests).map((manifest:Manifest)=>(
+                        
                         <option key={manifest.languageId} value={manifest.languageName}>{manifest.languageName}</option>
                     ))}
             </select>

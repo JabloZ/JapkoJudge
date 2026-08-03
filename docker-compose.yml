@@ -8,6 +8,7 @@ services:
       - ConnectionStrings__Default=Host=${DB_HOST};Port=${DB_PORT};Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
       - FRONTEND_URL=http://judge-frontend:3000
       - FileStorage__UploadsPath=/app/uploads
+      - FileStorage__UploadsVolumeName=uploads-data
     env_file:
       - .env
     ports:
@@ -17,6 +18,7 @@ services:
       - /app/obj
       - /app/bin 
       - uploads-data:/app/uploads
+      - /var/run/docker.sock:/var/run/docker.sock #not really safe but fine before prod
     command: sh -c "dotnet watch run --non-interactive --project WebBackend --no-launch-profile"
   judge-frontend:
     build: ./src/frontend
@@ -45,3 +47,4 @@ services:
 volumes:
   judge-db-data:
   uploads-data:
+    name: uploads-data

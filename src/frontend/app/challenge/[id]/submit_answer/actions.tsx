@@ -102,9 +102,6 @@ export async function HandleAnswerPost(id:string,prevState:any,formData:FormData
         return {success:false,error:resp};
     }
     
-    
     const data=await response.json();
-    
-    
     return{success:true};
 }
