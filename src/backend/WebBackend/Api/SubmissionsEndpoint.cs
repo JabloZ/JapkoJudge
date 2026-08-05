@@ -27,7 +27,7 @@ public static class SubmissionsEndpoint
                 string languageName=dto.LanguageName;
                 var language=await db.Languages.FirstOrDefaultAsync(k=>k.Name==languageName);
                 var manifest=await db.ChallengesLanguages.FirstOrDefaultAsync(k=>k.LanguageId==language.Id && k.ChallengeId==id);
-                //manifest.TestfilePath to sciezka do pliku testowego w kontenerze judgebackend
+                
                 var uploadsRoot=config["FileStorage:UploadsPath"]!;
                 
                 var userId=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);

@@ -23,6 +23,12 @@ export type Submission={
     code:string;
     status:string;
     message:string;
-    memoryused:number;
+    memoryUsed:number;
     executionTime:number;
+    challengeId:number;
+    challengeTitle:string;
 };
+export type Profile={
+    points:number;
+    challenges:number;
+}

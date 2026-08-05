@@ -104,7 +104,7 @@ public class DockerCodeRunner
             var (stdout, stderr) = await ReadLogsAsync(logsStream);
 
             var inspect = await _client.Containers.InspectContainerAsync(containerId);
-            Console.WriteLine($"[debug] peakMemoryBytes={peakMemoryBytes} elapsedMs={stopwatch.ElapsedMilliseconds}");
+            //Console.WriteLine($"[debug] peakMemoryBytes={peakMemoryBytes} elapsedMs={stopwatch.ElapsedMilliseconds}");
             return new CodeRunResult(
                 stdout, stderr, inspect.State.ExitCode, timedOut,
                 peakMemoryBytes, stopwatch.ElapsedMilliseconds);

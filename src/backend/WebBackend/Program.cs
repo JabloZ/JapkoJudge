@@ -86,4 +86,5 @@ app.MapRegisterEndpoint(); //adding url endpoints
 app.MapLoginEndpoint();
 app.MapChallengesEndpoint();
 app.MapSubmissionsEndpoint();
+app.MapUserEndpoint();
 app.Run();
