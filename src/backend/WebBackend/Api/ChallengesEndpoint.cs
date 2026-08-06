@@ -294,11 +294,39 @@ public static class ChallengesEndpoint
             
             
         }).RequireAuthorization().DisableAntiforgery();
+        app.MapPost("api/post/verify_challenge/{id}",async(string id,DecisionDto dto,JudgeDbContext db, ClaimsPrincipal claims) =>
+        {
+            
+            var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id.ToString()==id);
+            if (dto.decision == true)
+            {
+                challenge.Verified=true;
+                await db.SaveChangesAsync();
+                return Results.Ok(new{message=$"Challenge {id} is now verified!"});
+            }
+            else
+            {
+                challenge.Verified=false;
+                await db.SaveChangesAsync();
+                return Results.Ok(new{message=$"Challenge {id} is now unverified!"});
+            }
+
+        }).RequireAuthorization();
 
 
 
-
-
+        app.MapGet("api/get/unverified_challenges",async(JudgeDbContext db, ClaimsPrincipal claims) =>
+        {//name is misleading - change of conception
+            try
+            {
+                var challenges=await db.Challenges.ToListAsync();
+                return Results.Ok(new{message="Success",Challenges=challenges});
+            }
+            catch(Exception err)
+            {
+                return Results.BadRequest(new {message=$"Couldnt get challenges! {err}"});
+            }
+        }).RequireAuthorization();
         app.MapGet("api/users/{username}/challenges",async(string username, JudgeDbContext db, ClaimsPrincipal claims,IConfiguration config) =>
         {
             

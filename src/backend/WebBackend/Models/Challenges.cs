@@ -11,5 +11,5 @@ public class Challenge{
     public string Title{get;set;}="";
     public int Difficulty{get;set;}
     public string Description{get;set;}="";
-    public bool Verified=false;
+    public bool Verified{get;set;}=false;
 }
