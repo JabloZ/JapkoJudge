@@ -71,3 +71,37 @@ export async function PostChallengeDecision(id:string, decision:boolean): Promis
     return{success:true,message:"ok"};
 
 }
+export async function PostChallengeDifficulty(id:string, difficulty:string): Promise<PostResult> {
+    const num=Number(difficulty);
+    if (!Number.isInteger(num) || num<1 || num>7){
+        throw new Error("invalid");
+    }
+    const session = await getSession();
+    if (!session) {
+        redirect("/");
+    }
+    const token=await getToken();
+    if(!token){
+        return {success:false,error:"no token"};
+    }
+    
+    
+    const response=await fetch(`${process.env.BACKEND_URL}/api/post/change_difficulty/${id}`,{
+        method:"Post",
+        headers:{
+            "Authorization":`Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+        body:JSON.stringify({difficulty})
+    })
+    
+    if (!response.ok){
+        
+        const resp=await response.text();
+        return {success:false,error:resp};
+    }
+    const data=await response.json();
+    
+    return{success:true,message:"ok"};
+
+}

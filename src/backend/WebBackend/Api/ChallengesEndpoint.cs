@@ -312,7 +312,16 @@ public static class ChallengesEndpoint
             }
 
         }).RequireAuthorization();
+        app.MapPost("api/post/change_difficulty/{id}",async(string id,DifficultyDto dto,JudgeDbContext db, ClaimsPrincipal claims) =>
+        {
+            
+            var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id.ToString()==id);
+            challenge.Difficulty=dto.Difficulty;
+            await db.SaveChangesAsync();
+            return Results.Ok(new{message=$"Challenge {id} is now difficulty {dto.Difficulty}!"});
+          
 
+        }).RequireAuthorization();
 
 
         app.MapGet("api/get/unverified_challenges",async(JudgeDbContext db, ClaimsPrincipal claims) =>
