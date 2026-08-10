@@ -90,7 +90,22 @@ public static class SubmissionsEndpoint
         }).RequireAuthorization();
 
 
-
+        app.MapGet("api/ranking/top={top},language={languageId}",async(int top, int languageId, JudgeDbContext db) =>
+        {
+            /*
+            select a."Username", count(*) as challenge_count, sum(POWER(2,a."Difficulty")) 
+	From(
+	select DISTINCT u."Username", c."Id", c."Difficulty"
+	from "Users" as u
+	Inner join "Submissions" as s on s."OwnerId"=u."Id"
+	Inner join "ChallengesLanguages" as m on s."ManifestId"=m."Id"
+	Inner join "Challenges" as c on c."Id"=m."ChallengeId"
+	Where s."Status"='1'
+	) as a
+Group by a."Username"
+order by challenge_count;
+            */
+        }).RequireAuthorization();
 
         app.MapGet("api/submissions/get",async(JudgeDbContext db, ClaimsPrincipal claims)=>
         {
