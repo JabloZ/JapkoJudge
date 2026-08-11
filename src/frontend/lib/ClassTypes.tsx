@@ -32,3 +32,13 @@ export type Profile={
     points:number;
     challenges:number;
 }
+export type Rank={
+    username:string,
+    challengeCount:number,
+    score:number
+}
+export type Language={
+    id:number,
+    name:string,
+    extension:string
+}

@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using WebBackend.Migrations;
 using System.IO;
 using WebBackend.Code;
+using System.Security.Cryptography.X509Certificates;
+
 public static class SubmissionsEndpoint
 {
     public static void MapSubmissionsEndpoint(this IEndpointRouteBuilder app)
@@ -92,18 +94,39 @@ public static class SubmissionsEndpoint
 
         app.MapGet("api/ranking/top={top},language={languageId}",async(int top, int languageId, JudgeDbContext db) =>
         {
+            var res=await db.Submissions
+                .Where(s=>s.Status=="1")
+                .Select(s => new
+                {
+                    Username=s.Owner.Username,
+                    ChallengeId=s.Manifest.Challenge.Id,
+                    Difficulty=s.Manifest.Challenge.Difficulty,
+                    LanguageId=s.Manifest.LanguageId
+                })
+                .Where(x=>x.LanguageId==languageId)
+                .Distinct()
+                .GroupBy(x=>x.Username)
+                .Select(g => new{
+                    Username=g.Key,
+                    ChallengeCount=g.Count(),
+                    Score=g.Sum(x=>Math.Pow(2,x.Difficulty))
+                })
+                .OrderByDescending(x=>x.Score)
+                .Take(top)
+                .ToListAsync();
+            return Results.Ok(new{message="Returned ranking",ranking=res});
             /*
             select a."Username", count(*) as challenge_count, sum(POWER(2,a."Difficulty")) 
-	From(
-	select DISTINCT u."Username", c."Id", c."Difficulty"
-	from "Users" as u
-	Inner join "Submissions" as s on s."OwnerId"=u."Id"
-	Inner join "ChallengesLanguages" as m on s."ManifestId"=m."Id"
-	Inner join "Challenges" as c on c."Id"=m."ChallengeId"
-	Where s."Status"='1'
-	) as a
-Group by a."Username"
-order by challenge_count;
+                From(
+                select DISTINCT u."Username", c."Id", c."Difficulty"
+                from "Users" as u
+                Inner join "Submissions" as s on s."OwnerId"=u."Id"
+                Inner join "ChallengesLanguages" as m on s."ManifestId"=m."Id"
+                Inner join "Challenges" as c on c."Id"=m."ChallengeId"
+                Where s."Status"='1'
+                ) as a
+            Group by a."Username"
+            order by challenge_count;
             */
         }).RequireAuthorization();
 

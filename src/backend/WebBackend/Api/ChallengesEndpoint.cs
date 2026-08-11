@@ -444,5 +444,16 @@ public static class ChallengesEndpoint
                 return Results.BadRequest(new{message=$"Error returning language support {err}"});
             }
         }).RequireAuthorization();
+        app.MapGet("api/languages",async(JudgeDbContext db) =>
+        {
+            try{
+                var languages=await db.Languages.ToListAsync();
+                return Results.Ok(new{languages=languages});
+            }
+            catch(Exception ex)
+            {
+                return Results.BadRequest(new{message=$"err {ex}"});
+            }
+        }).RequireAuthorization();
     } 
 }
