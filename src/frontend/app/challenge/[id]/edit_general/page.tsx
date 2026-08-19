@@ -1,6 +1,6 @@
 
 
-import { getSession } from "@/lib/session";
+import { getSession, isAuthor } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { EditChallengeForm } from "./EditChallengeForm";
 import { GetChallengeGeneralData } from "./actions";
@@ -11,6 +11,10 @@ export default async function EditChallenge({params}:{params:Promise<{id:string}
         redirect("/");
     }
     const {id}=await params;
+    const isUserAuthor=await isAuthor(Number.parseInt(id));
+    if (!isUserAuthor){
+        redirect(`/challenge/${id}`);
+    }
     const response=await GetChallengeGeneralData(id);
     if (!response.success){
         const err=response.error;

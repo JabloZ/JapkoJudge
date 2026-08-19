@@ -1,7 +1,7 @@
 
 'use server';
 import { getToken } from "@/lib/session";
-import { getSession } from "@/lib/session";
+import { getSession, isAuthor } from "@/lib/session";
 import { redirect } from "next/navigation";
 export async function AddLanguageHandle(id:string, prevState:any,formData:FormData){
     //check if viewer is author
@@ -13,7 +13,10 @@ export async function AddLanguageHandle(id:string, prevState:any,formData:FormDa
     if (!token){
         return {error:"no token"};
     }
-    
+    const isUserAuthor=await isAuthor(Number.parseInt(id));
+    if (!isUserAuthor){
+        return {error:"you are not an author!"};
+    }
     const startfile=formData.get("startfile") as File || null;
     const testfile=formData.get("testfile") as File || null;
     const language=formData.get("language")as string;

@@ -20,6 +20,25 @@ public static class UserEndpoint
 {
     public static void MapUserEndpoint(this IEndpointRouteBuilder app)
     {
+        app.MapGet("api/IsUserAdmin",async(JudgeDbContext db, ClaimsPrincipal claims) =>
+        {
+            User user=null;
+            try{
+                var userId=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (userId is null || !int.TryParse(userId, out var userIdClaim)){
+                    return Results.BadRequest(new{message="User not found!"});
+                }
+                user=await db.Users.FirstOrDefaultAsync(u=>u.Id.ToString()==userId);
+                return Results.Ok(new{admin=user.Admin});
+            }
+            catch(Exception ex)
+            {
+
+                return Results.BadRequest(new{message=ex});
+            }
+            
+            
+        }).RequireAuthorization();
         app.MapGet("api/users/{username}/profile", async ( string username, JudgeDbContext db) =>
         {
             var user=await db.Users.FirstOrDefaultAsync(u=>u.Username==username);

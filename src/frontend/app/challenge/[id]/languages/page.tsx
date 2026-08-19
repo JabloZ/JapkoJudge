@@ -1,6 +1,6 @@
 
 
-import { getSession } from "@/lib/session";
+import { getSession, isAuthor } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { ViewLanguages } from "./ViewLanguages";
 import { GetLanguagesSupported } from "./actions";
@@ -13,6 +13,10 @@ export default async function ViewChallengeLanguages({params}:{params:Promise<{i
     }
     const OwnId=session.id;
     const {id}=await params;
+    const isUserAuthor=await isAuthor(Number.parseInt(id));
+    if (!isUserAuthor){
+        redirect(`/challenge/${id}`);
+    }
     const response=await GetLanguagesSupported(id);
     if (!response.success){
         return <p>Couldnt get languages supported for this challenge.</p>

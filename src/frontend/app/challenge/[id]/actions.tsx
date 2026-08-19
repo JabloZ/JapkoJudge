@@ -1,6 +1,6 @@
 'use server';
 
-import { getSession, getToken } from "@/lib/session";
+import { getSession, getToken, isAuthor } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { Challenge } from "@/lib/ClassTypes";
 type ChallengesResult =
@@ -17,7 +17,7 @@ export async function GetChallengeRequest({id}:{id:string}): Promise<ChallengesR
     if(!token){
         return {success:false,error:"no token"};
     }
-
+    
     const response=await fetch(`${process.env.BACKEND_URL}/api/challenges/${id}`,{
         method:"GET",
         headers:{

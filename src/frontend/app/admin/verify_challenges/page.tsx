@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getSession, isAdmin } from "@/lib/session";
 import { GetChallengesRequest } from "./actions";
 import { ShowUnverifiedChallenges } from "./ShowUnverifiedChallenges";
 export default async function ShowUnverifiedChallengesPage() {
@@ -8,6 +8,11 @@ export default async function ShowUnverifiedChallengesPage() {
     if (!session) {
         redirect("/");
     }
+    const isUserAdmin= await isAdmin();
+    if (!isUserAdmin){
+        redirect("/"); 
+    }
+    
     //CHECK IF ADMIN TODO
     
     var res=await GetChallengesRequest();

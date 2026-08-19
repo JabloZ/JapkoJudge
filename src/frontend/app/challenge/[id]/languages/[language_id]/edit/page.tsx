@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { getSession,isAuthor } from "@/lib/session";
 import { EditLanguageForm } from "./EditLanguageForm";
 export default async function EditLanguagePage({params}:{params:Promise<{id:string, language_id:string}>}) {
     //todo: check if viewer is author
@@ -7,6 +7,11 @@ export default async function EditLanguagePage({params}:{params:Promise<{id:stri
     if (!session) {
         redirect("/");
     }
+    
     const{id, language_id}=await params;
+    const isUserAuthor=await isAuthor(Number.parseInt(id));
+        if (!isUserAuthor){
+            redirect(`/challenge/${id}`);
+        }
     return <EditLanguageForm id={id} language_id={language_id}/>;
 }

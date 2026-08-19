@@ -324,8 +324,23 @@ public static class ChallengesEndpoint
         }).RequireAuthorization();
 
 
+        app.MapGet("api/get/challenge/{id}/is_author",async(int id, JudgeDbContext db, ClaimsPrincipal claims) =>
+        {
+            try
+            {
+                var userId=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                var challenge=await db.Challenges.FirstOrDefaultAsync(c=>c.Id==id);
+                bool author=challenge.OwnerId.ToString()==userId;
+                return Results.Ok(new{author=author});
+            }
+            catch(Exception ex)
+            {
+                return Results.BadRequest(new{message="err"});
+            }
+        }).RequireAuthorization();
+
         app.MapGet("api/get/unverified_challenges",async(JudgeDbContext db, ClaimsPrincipal claims) =>
-        {//name is misleading - change of conception
+        {//name is misleading - change of conception. this api returns all challenges, but in future it will be needed
             try
             {
                 var challenges=await db.Challenges.ToListAsync();

@@ -3,12 +3,13 @@
 import { getSession, getToken } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { Challenge } from "@/lib/ClassTypes";
+import { isAdmin } from "@/lib/session";
 type ChallengesResult =
   | { success: true; challenges: Challenge[] }
   | { success: false; error: string };
   
 export async function GetChallengesRequest(): Promise<ChallengesResult> {
-    
+   
     const session = await getSession();
     if (!session) {
         redirect("/");
@@ -17,7 +18,11 @@ export async function GetChallengesRequest(): Promise<ChallengesResult> {
     if(!token){
         return {success:false,error:"no token"};
     }
-
+    const isUserAdmin= await isAdmin();
+    if (!isUserAdmin){
+        return {success:false,error:"you are not an admin"};
+    }
+    
     
     const response=await fetch(`${process.env.BACKEND_URL}/api/get/unverified_challenges`,{
         method:"GET",
@@ -46,11 +51,15 @@ export async function PostChallengeDecision(id:string, decision:boolean): Promis
     if (!session) {
         redirect("/");
     }
+    
     const token=await getToken();
     if(!token){
         return {success:false,error:"no token"};
     }
-
+    const isUserAdmin= await isAdmin();
+    if (!isUserAdmin){
+        return {success:false,error:"you are not an admin"};
+    }
     
     const response=await fetch(`${process.env.BACKEND_URL}/api/post/verify_challenge/${id}`,{
         method:"Post",
@@ -84,6 +93,11 @@ export async function PostChallengeDifficulty(id:string, difficulty:string): Pro
     if(!token){
         return {success:false,error:"no token"};
     }
+     const isUserAdmin= await isAdmin();
+    if (!isUserAdmin){
+        return {success:false,error:"you are not an admin"};
+    }
+    
     
     
     const response=await fetch(`${process.env.BACKEND_URL}/api/post/change_difficulty/${id}`,{

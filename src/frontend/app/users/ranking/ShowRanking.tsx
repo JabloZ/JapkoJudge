@@ -12,7 +12,7 @@ export function ShowRanking({languages}: {languages: Language[]}){
 
     async function handleSearch() {
         if (!selectedLanguage) {
-            setError('Wybierz język');
+            setError('Choose language');
             return;
         }
         setError('');
@@ -40,7 +40,7 @@ export function ShowRanking({languages}: {languages: Language[]}){
                 value={selectedLanguage} 
                 onChange={(e) => setSelectedLanguage(e.target.value)}
             >
-                <option value="">-- wybierz --</option>
+                <option value="">-- Select --</option>
                 {languages.map((language: Language) => (
                     <option key={language.id} value={language.id}>{language.name}</option>
                 ))}

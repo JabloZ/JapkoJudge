@@ -2,15 +2,19 @@
 import { getToken } from "@/lib/session";
 import { redirect } from "next/navigation";
 
-import { getSession } from "@/lib/session";
+import { getSession, isAuthor } from "@/lib/session";
 export async function EditChallengeGeneralRequest(id:string,prevState:any,formData:FormData){
     const session = await getSession();
         if (!session) {
-            redirect("/");
+            return{error:"no session"};
         }
     const token=await getToken();
     if (!token){
         return {error:"no token"};
+    }
+    const isUserAuthor=await isAuthor(Number.parseInt(id));
+    if (!isUserAuthor){
+            return {error:"you are not an author!"};
     }
     const title=formData.get("title")
     const description=formData.get("description")
@@ -53,9 +57,14 @@ export async function GetChallengeGeneralData(id:string):Promise<GetDataResult>{
         if (!session) {
             redirect("/");
         }
+    
     const token=await getToken();
     if (!token){
         return {success:false, error:"no token"};
+    }
+    const isUserAuthor=await isAuthor(Number.parseInt(id));
+    if (!isUserAuthor){
+            return {success:false,error:"you are not an author!"};
     }
     const response= await fetch(`${process.env.BACKEND_URL}/api/challenges/${id}`,{
         "method":"GET",

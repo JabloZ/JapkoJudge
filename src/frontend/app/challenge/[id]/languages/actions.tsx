@@ -1,5 +1,5 @@
 'use server';
-import { getToken } from "@/lib/session";
+import { getToken, isAuthor } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { Manifest } from "@/lib/ClassTypes";
@@ -15,7 +15,10 @@ export async function GetLanguagesSupported(id:string):Promise<GetDataResult>{
     if (!token){
         return {success:false, error:"no token"};
     }
-    
+    const isUserAuthor=await isAuthor(Number.parseInt(id));
+    if (!isUserAuthor){
+            return {success:false,error:"you are not an author!"};
+    }
     const response= await fetch(`${process.env.BACKEND_URL}/api/challenges/${id}/returnLanguages`,{
         "method":"GET",
         "headers":{
@@ -34,6 +37,7 @@ export async function GetLanguagesSupported(id:string):Promise<GetDataResult>{
 }
 
 export async function DeleteLanguageHandle(id:string, language_id:string, path:string, prevState:any,formData:FormData){
+
     const session = await getSession();
         if (!session) {
             redirect("/");
@@ -42,7 +46,10 @@ export async function DeleteLanguageHandle(id:string, language_id:string, path:s
     if (!token){
         return {error:"no token"};
     }
-
+    const isUserAuthor=await isAuthor(Number.parseInt(id));
+    if (!isUserAuthor){
+            return {error:"you are not an author!"};
+    }
     try{
        
         const response=await fetch(`${process.env.BACKEND_URL}/api/challenges/${id}/deleteLanguageSupport/${language_id}`,{

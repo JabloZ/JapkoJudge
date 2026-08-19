@@ -38,3 +38,33 @@ export async function getToken(){
     }
     return token;
 }
+export async function isAdmin(){
+    const session = await getSession();
+    if (!session) {
+        redirect("/");
+    }
+    const token=await getToken();
+    const response=await fetch(`${process.env.BACKEND_URL}/api/IsUserAdmin`,{
+        headers:{Authorization:`Bearer ${token}`},
+    });
+    if (!response.ok){
+        return {error:"something went wrong"}
+    }
+    const admin=await response.json();
+    return admin.admin;
+}
+export async function isAuthor(id:number){
+    const session = await getSession();
+    if (!session) {
+        redirect("/");
+    }
+    const token=await getToken();
+    const response=await fetch(`${process.env.BACKEND_URL}/api/get/challenge/${id}/is_author`,{
+        headers:{Authorization:`Bearer ${token}`},
+    });
+    if(!response.ok){
+        return{error:"something went wrong"};
+    }
+    const author=await response.json();
+    return author.author;
+}
