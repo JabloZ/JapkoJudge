@@ -50,7 +50,6 @@ public static class LoginEndpoint
         
          
         app.MapPost("api/logout", async(ClaimsPrincipal claims, JudgeDbContext db)=>{
-            Console.WriteLine("aaa");
            var userId=int.Parse(claims.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
            var user= await db.Users.FindAsync(userId);
            if (user is null)

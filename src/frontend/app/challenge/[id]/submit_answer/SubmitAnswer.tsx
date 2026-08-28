@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { HandleAnswerPost } from "./actions";
 import { Submission, Manifest} from "@/lib/ClassTypes";
+import { LENGTHS } from "@/lib/globals";
 export default function SubmitAnswer({challenge,manifests}:{challenge:Challenge,manifests:Manifest[]}){
     const HandleAnswerPostId=HandleAnswerPost.bind(null,challenge.id.toString());
     const[state,formAction,isPending]=useActionState(HandleAnswerPostId,null);
@@ -22,7 +23,7 @@ export default function SubmitAnswer({challenge,manifests}:{challenge:Challenge,
                         <option key={manifest.languageId} value={manifest.languageName}>{manifest.languageName}</option>
                     ))}
             </select>
-            <textarea id="code" name="code"></textarea>
+            <textarea id="code" name="code" maxLength={LENGTHS.submission}></textarea>
             <button type="submit">Submit</button>
              </form>
         </div>

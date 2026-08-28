@@ -12,8 +12,7 @@ export default async function ShowUnverifiedChallengesPage() {
     if (!isUserAdmin){
         redirect("/"); 
     }
-    
-    //CHECK IF ADMIN TODO
+
     
     var res=await GetChallengesRequest();
     

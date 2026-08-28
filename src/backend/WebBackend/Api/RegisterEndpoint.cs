@@ -3,6 +3,8 @@ using WebBackend.Models;
 namespace WebBackend.Api;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WebBackend.Globals;
+using System.Text.RegularExpressions;
 public static class RegisterEndpoint
 {
     public static void MapRegisterEndpoint(this IEndpointRouteBuilder app)
@@ -11,7 +13,7 @@ public static class RegisterEndpoint
         app.MapPost("api/register", async (RegisterDto dto, JudgeDbContext db) =>
         {
             //todo - password and email validation, maybe in the future mail verification
-            Console.WriteLine($"Received form: {dto.Username}");
+
             if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
             {
                 return Results.BadRequest(new{message="Empty"});
@@ -21,7 +23,7 @@ public static class RegisterEndpoint
             {
                 return Results.BadRequest(new{message=ValidationString});
             }
-            Console.WriteLine($"Received register form: {dto.Username}");
+            
             var user=new User
             {
                 Username=dto.Username,
@@ -44,6 +46,14 @@ public static class RegisterEndpoint
         if (usernameTaken == true)
         {
             return "this username is already taken. Try again";
+        }
+        if (dto.Username.Length > Lengths.Username)
+        {
+            return "this username is too long! max is 24 characters, try again";
+        }
+        if (Regex.IsMatch(dto.Username, @"^[a-zA-Z0-9_-]+$"))
+        {
+            return "username can only contain alphanumeric characters (a-z, A-Z, 0-9) and '_', '-'";
         }
         bool emailTaken= await db.Users.AnyAsync(u=>u.Email==dto.Email);
         if (usernameTaken == true)
