@@ -25,16 +25,19 @@ public static class UserEndpoint
             User user=null;
             try{
                 var userId=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                if (userId is null || !int.TryParse(userId, out var userIdClaim)){
+                if (!int.TryParse(userId, out var id)){
                     return Results.BadRequest(new{message="User not found!"});
                 }
-                user=await db.Users.FirstOrDefaultAsync(u=>u.Id.ToString()==userId);
+                user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+                if (user is null)
+                {
+                    return Results.BadRequest(new{message="No user"});
+                }
                 return Results.Ok(new{admin=user.Admin});
             }
             catch(Exception ex)
             {
-
-                return Results.BadRequest(new{message=ex});
+                return Results.Problem(statusCode: 500, detail: "Internal server error");
             }
             
             
@@ -47,7 +50,7 @@ public static class UserEndpoint
                 return Results.NotFound($"User '{username}' not found.");
             }
             var submissions = await db.Submissions
-            .Where(s => s.OwnerId == user.Id)
+            .Where(s => s.OwnerId == user.Id && s.Status=="1")
             .ToListAsync();
 
             var manifestIds = submissions

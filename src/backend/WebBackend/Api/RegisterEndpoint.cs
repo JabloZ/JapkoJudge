@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebBackend.Globals;
 using System.Text.RegularExpressions;
+using WebBackend.Globals;
+
 public static class RegisterEndpoint
 {
     public static void MapRegisterEndpoint(this IEndpointRouteBuilder app)
@@ -13,7 +15,14 @@ public static class RegisterEndpoint
         app.MapPost("api/register", async (RegisterDto dto, JudgeDbContext db) =>
         {
             //todo - password and email validation, maybe in the future mail verification
-
+            if (dto.Password.Length < Lengths.MinPassword)
+            {
+                return Results.BadRequest(new{message="password must be at least 8 characters long"});
+            }
+            if (dto.Password.Length > Lengths.MinPassword)
+            {
+                return Results.BadRequest(new{message="password can be at most 512 characters long"});
+            }
             if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
             {
                 return Results.BadRequest(new{message="Empty"});
@@ -30,11 +39,17 @@ public static class RegisterEndpoint
                 Email=dto.Email
                 
             };
-
+            
             var hasher=new PasswordHasher<User>();
             user.PasswordHash=hasher.HashPassword(user, dto.Password);
             db.Users.Add(user);
-            await db.SaveChangesAsync();
+            try{
+                await db.SaveChangesAsync();
+            }
+            catch(DbUpdateException ex) when (IsUniqueViolation(ex))
+            {
+                return Results.Conflict(new{message="username or email already taken"});
+            }
             return Results.Ok(new{message=$"Created user {dto.Username}"});
         });
         
@@ -51,14 +66,22 @@ public static class RegisterEndpoint
         {
             return "this username is too long! max is 24 characters, try again";
         }
-        if (Regex.IsMatch(dto.Username, @"^[a-zA-Z0-9_-]+$"))
+        if (!Regex.IsMatch(dto.Username, @"^[a-zA-Z0-9_-]+$"))
         {
             return "username can only contain alphanumeric characters (a-z, A-Z, 0-9) and '_', '-'";
         }
         bool emailTaken= await db.Users.AnyAsync(u=>u.Email==dto.Email);
-        if (usernameTaken == true)
+        if (emailTaken == true)
         {
-            return "this username is already taken. Try again";
+            return "this email is already taken. Try again";
+        }
+        if (dto.Email.Length > 254)
+        {
+            return "this email is too long!";
+        }
+        if (!Regex.IsMatch(dto.Email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"))
+        {
+            return "this email is invalid. correct format is [mail]@[domain]";
         }
         return "success";
 

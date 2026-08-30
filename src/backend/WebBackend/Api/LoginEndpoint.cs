@@ -27,7 +27,7 @@ public static class LoginEndpoint
             var user= await db.Users.FirstOrDefaultAsync(u=>u.Username==dto.Username);
             if (user==null)
             {
-                return Results.BadRequest(new{message=$"User with username {dto.Username} doesn't exist!"});
+                return Results.BadRequest(new{message=$"Invalid username or password"});
             }
 
             var hasher=new PasswordHasher<User>();
@@ -35,7 +35,7 @@ public static class LoginEndpoint
             var res = hasher.VerifyHashedPassword(user,  user.PasswordHash, dto.Password);//order is important...
             if (res==PasswordVerificationResult.Failed)
             {
-                return Results.BadRequest(new{message="Wrong password! Try again"});
+                return Results.BadRequest(new{message="Invalid username or password"});
             }
             var token=GenerateJwtToken(user,config);
             

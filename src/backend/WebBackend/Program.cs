@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebBackend.Migrations;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -12,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using WebBackend.Code;
+using System.Net;
 var builder = WebApplication.CreateBuilder(args);
 
 /*
@@ -78,6 +81,22 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<JudgeDbContext>();
     db.Database.Migrate();
 }
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1), 
+                QueueLimit = 0
+            }));
+});
+
+
 app.Urls.Add("http://0.0.0.0:8001"); //i added this port because .net automatically changed it to default from appsettings.json
 app.UseCors("AllowNextJs");
 app.UseAuthentication();   //auth and auth so session tokens are properly sent, order important
@@ -87,4 +106,5 @@ app.MapLoginEndpoint();
 app.MapChallengesEndpoint();
 app.MapSubmissionsEndpoint();
 app.MapUserEndpoint();
+app.UseRateLimiter();
 app.Run();

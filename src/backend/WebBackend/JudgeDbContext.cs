@@ -20,6 +20,13 @@ public class JudgeDbContext : DbContext
             new Language { Id = 1, Name = "c" , Extension="c"},
             new Language { Id = 2, Name = "python", Extension="py" }
         );
+         modelBuilder.Entity<User>()
+            .HasIndex(u => u.Username)
+            .IsUnique();
+
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
     }
 
 }

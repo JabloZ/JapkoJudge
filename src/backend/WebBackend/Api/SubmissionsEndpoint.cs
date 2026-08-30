@@ -15,7 +15,7 @@ using WebBackend.Migrations;
 using System.IO;
 using WebBackend.Code;
 using System.Security.Cryptography.X509Certificates;
-
+using WebBackend.Globals;
 public static class SubmissionsEndpoint
 {
     public static void MapSubmissionsEndpoint(this IEndpointRouteBuilder app)
@@ -26,15 +26,24 @@ public static class SubmissionsEndpoint
             try
             {
                 string code=dto.Code;
+                if (code.Length > Lengths.Submission)
+                {
+                    return Results.BadRequest(new{message="Submission is too long!"});
+                }
                 string languageName=dto.LanguageName;
                 var language=await db.Languages.FirstOrDefaultAsync(k=>k.Name==languageName);
+                if (language is null)
+                {
+                    return Results.BadRequest(new{message="Language not found!"});
+                }
                 var manifest=await db.ChallengesLanguages.FirstOrDefaultAsync(k=>k.LanguageId==language.Id && k.ChallengeId==id);
+                if (manifest is null)
+                {
+                    return Results.BadRequest(new{message="Challenge not found!"});
+                }
                 
                 var uploadsRoot=config["FileStorage:UploadsPath"]!;
-                
                 var userId=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
-
 
                 var submissionId = Guid.NewGuid();
                 string relativeDir = Path.Combine("tmp", "submissions", submissionId.ToString());
@@ -94,6 +103,10 @@ public static class SubmissionsEndpoint
 
         app.MapGet("api/ranking/top={top},language={languageId}",async(int top, int languageId, JudgeDbContext db) =>
         {
+            if (top < 1 || top>1000)
+            {
+                return Results.BadRequest(new{message="wrong  top amount"});
+            }
             var res=await db.Submissions
                 .Where(s=>s.Status=="1")
                 .Select(s => new
@@ -114,6 +127,10 @@ public static class SubmissionsEndpoint
                 .OrderByDescending(x=>x.Score)
                 .Take(top)
                 .ToListAsync();
+            if (res.Count == 0)
+            {
+                return Results.Ok(new{message="No results", ranking=res});
+            }
             return Results.Ok(new{message="Returned ranking",ranking=res});
             /*
             select a."Username", count(*) as challenge_count, sum(POWER(2,a."Difficulty")) 
@@ -148,6 +165,10 @@ public static class SubmissionsEndpoint
             })
             .Where(k=>k.OwnerId.ToString()==userId)
             .ToListAsync();
+            if (submissions.count == 0)
+            {
+                return Results.Ok(new{message="no results",submissions});    
+            }
             foreach(SubmissionDto s in submissions)
             {
                 var manifest=await db.ChallengesLanguages.FirstOrDefaultAsync(k=>k.Id==s.ManifestId);
