@@ -22,10 +22,13 @@ public static class SubmissionsEndpoint
     {
         app.MapPost("api/submissions/add/challenge/{id}",async(int id, JudgeDbContext db, SubmissionAddDto dto,IConfiguration config,ClaimsPrincipal claims,DockerCodeRunner runner) =>
         {
-            
+            string? submissionDir = null; 
             try
             {
                 string code=dto.Code;
+                if (string.IsNullOrEmpty(dto.Code)){
+                    return Results.BadRequest(new{message="Code cannot be empty"});
+                }
                 if (code.Length > Lengths.Submission)
                 {
                     return Results.BadRequest(new{message="Submission is too long!"});
@@ -94,7 +97,20 @@ public static class SubmissionsEndpoint
             }
             catch(Exception err)
             {
-                return Results.BadRequest(new{message=$"Something went wrong: {err}"});
+                return Results.Problem(statusCode: 500, detail: "Something went wrong processing your submission");
+            }
+            finally
+            {
+                if (submissionDir is not null && Directory.Exists(submissionDir))
+                {
+                    try
+                    {
+                        Directory.Delete(submissionDir, recursive: true);
+                    }
+                    catch (Exception cleanupErr)
+                    {
+                    }
+                }
             }
            
             return Results.Ok(new{message="success"});
@@ -165,7 +181,7 @@ public static class SubmissionsEndpoint
             })
             .Where(k=>k.OwnerId.ToString()==userId)
             .ToListAsync();
-            if (submissions.count == 0)
+            if (submissions.Count == 0)
             {
                 return Results.Ok(new{message="no results",submissions});    
             }
