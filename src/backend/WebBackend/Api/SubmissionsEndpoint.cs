@@ -25,6 +25,7 @@ public static class SubmissionsEndpoint
             string? submissionDir = null; 
             try
             {
+
                 string code=dto.Code;
                 if (string.IsNullOrEmpty(dto.Code)){
                     return Results.BadRequest(new{message="Code cannot be empty"});
@@ -44,7 +45,10 @@ public static class SubmissionsEndpoint
                 {
                     return Results.BadRequest(new{message="Challenge not found!"});
                 }
-                
+                if (manifest.Verified == false)
+                {
+                    return Results.Conflict(new{message="This challenge is not verified."});
+                }
                 var uploadsRoot=config["FileStorage:UploadsPath"]!;
                 var userId=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
 

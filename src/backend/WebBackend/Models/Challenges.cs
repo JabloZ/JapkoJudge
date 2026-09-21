@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace WebBackend.Models;
+[Index(nameof(OwnerId), nameof(Title), IsUnique = true)]
 public class Challenge{
     public int Id{get;set;}
    

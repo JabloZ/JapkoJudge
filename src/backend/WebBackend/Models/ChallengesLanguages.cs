@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace WebBackend.Models;
+
+[Index(nameof(ChallengeId), nameof(LanguageId), IsUnique = true)]
 public class ChallengeLanguage{
     public int Id{get;set;}
    

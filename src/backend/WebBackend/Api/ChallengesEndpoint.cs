@@ -64,7 +64,7 @@ public static class ChallengesEndpoint
                 return Results.BadRequest(new{message=$"Error!"});
             }
             
-        }).RequireAuthorization().DisableAntiforgery();//disable antiforgery is for fromform
+        }).RequireAuthorization().DisableAntiforgery().WithMetadata(new RequestSizeLimitAttribute(Globals.ChallengeTitle + Globals.ChallengeTest * 2));
         //fromform because of file input
         app.MapPost("api/addLanguageToChallenge/{id}",async(int id, [FromForm] LanguageDto dto, ClaimsPrincipal claims, JudgeDbContext db, IConfiguration config) =>
         {
@@ -153,7 +153,7 @@ public static class ChallengesEndpoint
                 return Results.BadRequest(new{message=$"Error while creating: "});
             }
 
-        }).RequireAuthorization().DisableAntiforgery();
+        }).RequireAuthorization().DisableAntiforgery().WithMetadata(new RequestSizeLimitAttribute(Globals.Submission + Globals.ChallengeTest + 64 * 1024));
         
         app.MapPost("api/challenges/{id}/editGeneral",async(string id, [FromForm] ChallengeDto dto,JudgeDbContext db,IConfiguration config, ClaimsPrincipal claims) =>
         {
@@ -217,16 +217,7 @@ public static class ChallengesEndpoint
                 {
                     return Results.NotFound(new{message="Manifest not found"});
                 }
-                string startcodePath=manifest.StartCode; 
-                if (File.Exists(startcodePath))
-                {
-                    File.Delete(startcodePath);
-                }
-                string testcodePath=manifest.TestfilePath; 
-                if (File.Exists(testcodePath))
-                {
-                    File.Delete(testcodePath);
-                }
+              
                 var Language=await db.Languages.FirstOrDefaultAsync(l=>l.Id.ToString()==dto.Language);
                 if (Language is null)
                 {
@@ -271,7 +262,16 @@ public static class ChallengesEndpoint
 
                 manifest.Verified=false;
                 await db.SaveChangesAsync();
-
+                string startcodePath=manifest.StartCode; 
+                if (File.Exists(startcodePath))
+                {
+                    File.Delete(startcodePath);
+                }
+                string testcodePath=manifest.TestfilePath; 
+                if (File.Exists(testcodePath))
+                {
+                    File.Delete(testcodePath);
+                }
                 return Results.Ok(new { message = "Language added!" });
             }
             catch(Exception err)
@@ -279,7 +279,7 @@ public static class ChallengesEndpoint
                 return Results.BadRequest(new{message=$"Error while creating: "});
             }
 
-        }).RequireAuthorization().DisableAntiforgery();
+        }).RequireAuthorization().DisableAntiforgery().WithMetadata(new RequestSizeLimitAttribute(Globals.Submission + Globals.ChallengeTest + 64 * 1024));
         app.MapPost("api/challenges/{id}/deleteLanguageSupport/{language_id}", async(int id, int language_id, JudgeDbContext db,ClaimsPrincipal claims)=>{
             
             try
@@ -443,8 +443,28 @@ public static class ChallengesEndpoint
         {//name is misleading - change of conception. this api returns all challenges, but in future it will be needed
             try
             {
-                var challenges=await db.Challenges.ToListAsync();
-                return Results.Ok(new{message="Success",Challenges=challenges});
+                var userIdClaim = claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (!int.TryParse(userIdClaim, out var viewerId))
+                {
+                    return Results.Unauthorized();
+                }
+
+                var challenges = await db.Challenges
+                    .AsNoTracking()
+                    .OrderByDescending(k => k.Id)
+                    .Select(k => new ChallengeViewDto
+                    {
+                        Id = k.Id,
+                        Title = k.Title,
+                        Username = k.User!.Username,
+                        Difficulty = k.Difficulty,
+                        Description = k.Description,
+                        Verified = k.Verified,
+                        ViewerOwner = k.OwnerId == viewerId   // liczone per wyzwanie
+                    })
+                    .ToListAsync();
+
+                return Results.Ok(new { message = "Success", Challenges = challenges });
             }
             catch(Exception err)
             {
@@ -565,7 +585,7 @@ public static class ChallengesEndpoint
             }
             catch(Exception ex)
             {
-                return Results.BadRequest(new{message=$"err {ex}"});
+                return Results.BadRequest(new{message=$"err"});
             }
         }).RequireAuthorization();
     } 
