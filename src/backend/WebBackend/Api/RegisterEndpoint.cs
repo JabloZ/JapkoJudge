@@ -9,44 +9,48 @@ using WebBackend.Globals;
 
 public static class RegisterEndpoint
 {
+    
     public static void MapRegisterEndpoint(this IEndpointRouteBuilder app)
     {
         
         app.MapPost("api/register", async (RegisterDto dto, JudgeDbContext db) =>
         {
             //todo - password and email validation, maybe in the future mail verification
-            if (dto.Password.Length < Lengths.MinPassword)
-            {
-                return Results.BadRequest(new{message="password must be at least 8 characters long"});
-            }
-            if (dto.Password.Length > Lengths.MinPassword)
-            {
-                return Results.BadRequest(new{message="password can be at most 512 characters long"});
-            }
-            if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
-            {
-                return Results.BadRequest(new{message="Empty"});
-            }
-            string? ValidationString=await ValidateRequest(dto, db);
-            if ( ValidationString!= "success")
-            {
-                return Results.BadRequest(new{message=ValidationString});
-            }
-            
-            var user=new User
-            {
-                Username=dto.Username,
-                Email=dto.Email
-                
-            };
-            
-            var hasher=new PasswordHasher<User>();
-            user.PasswordHash=hasher.HashPassword(user, dto.Password);
-            db.Users.Add(user);
+           
             try{
+                if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
+                {
+                    return Results.BadRequest(new{message="Empty"});
+                }
+                if (dto.Password.Length < 8)
+                {
+                    return Results.BadRequest(new{message="password must be at least 8 characters long"});
+                }
+                if (dto.Password.Length > 128)
+                {
+                    return Results.BadRequest(new{message="password must be at most 128 characters long"});
+                }
+                var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+                string? ValidationString=await ValidateRequest(dto, db);
+                if ( ValidationString!= "success")
+                {
+                    return Results.BadRequest(new{message=ValidationString});
+                }
+                
+                var user=new User
+                {
+                    Username=dto.Username,
+                    Email=dto.Email
+                    
+                };
+                
+                var hasher=new PasswordHasher<User>();
+                user.PasswordHash=hasher.HashPassword(user, dto.Password);
+                db.Users.Add(user);
+                
                 await db.SaveChangesAsync();
             }
-            catch(DbUpdateException ex) when (IsUniqueViolation(ex))
+            catch(DbUpdateException ex)
             {
                 return Results.Conflict(new{message="username or email already taken"});
             }
@@ -62,7 +66,7 @@ public static class RegisterEndpoint
         {
             return "this username is already taken. Try again";
         }
-        if (dto.Username.Length > Lengths.Username)
+        if (dto.Username.Length > Globals.Username)
         {
             return "this username is too long! max is 24 characters, try again";
         }

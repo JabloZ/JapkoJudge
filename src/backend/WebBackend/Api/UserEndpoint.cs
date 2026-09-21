@@ -44,41 +44,47 @@ public static class UserEndpoint
         }).RequireAuthorization();
         app.MapGet("api/users/{username}/profile", async ( string username, JudgeDbContext db) =>
         {
-            var user=await db.Users.FirstOrDefaultAsync(u=>u.Username==username);
-            if (user is null)
-            {
-                return Results.NotFound($"User '{username}' not found.");
-            }
-            var submissions = await db.Submissions
-            .Where(s => s.OwnerId == user.Id && s.Status=="1")
-            .ToListAsync();
-
-            var manifestIds = submissions
-                .Select(s => s.ManifestId)
-                .Distinct();
-
-            var manifests = await db.ChallengesLanguages
-                .Where(cl => manifestIds.Contains(cl.Id))
+            try{
+                var user=await db.Users.FirstOrDefaultAsync(u=>u.Username==username);
+                if (user is null)
+                {
+                    return Results.NotFound($"User '{username}' not found.");
+                }
+                var submissions = await db.Submissions
+                .Where(s => s.OwnerId == user.Id && s.Status=="1")
                 .ToListAsync();
 
-            var challengeIds = manifests
-                .Select(m => m.ChallengeId)
-                .Distinct();
+                var manifestIds = submissions
+                    .Select(s => s.ManifestId)
+                    .Distinct();
 
-            var challenges = await db.Challenges
-                .Where(c => challengeIds.Contains(c.Id))
-                .ToListAsync();
-            int points=0;
-            int challengeCount=0;
-            foreach(Challenge ch in challenges)
-            {
-                points=points+(int)Math.Pow(2.0,(double)ch.Difficulty);
-                challengeCount++;
+                var manifests = await db.ChallengesLanguages
+                    .Where(cl => manifestIds.Contains(cl.Id))
+                    .ToListAsync();
+
+                var challengeIds = manifests
+                    .Select(m => m.ChallengeId)
+                    .Distinct();
+
+                var challenges = await db.Challenges
+                    .Where(c => challengeIds.Contains(c.Id))
+                    .ToListAsync();
+                int points=0;
+                int challengeCount=0;
+                foreach(Challenge ch in challenges)
+                {
+                    points=points+(int)Math.Pow(2.0,(double)ch.Difficulty);
+                    challengeCount++;
+                }
+                ProfileDto dto=new ProfileDto();
+                dto.Points=points;
+                dto.Challenges=challengeCount;
+                return Results.Ok(new{message="Success", Profile=dto});
             }
-            ProfileDto dto=new ProfileDto();
-            dto.Points=points;
-            dto.Challenges=challengeCount;
-            return Results.Ok(new{message="Success", Profile=dto});
+            catch(Exception err)
+            {
+                return Results.Problem(statusCode: 500, detail: "Something went wrong fetching the profile");
+            }
         }).RequireAuthorization();
     }
 }

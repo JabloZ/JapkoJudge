@@ -23,7 +23,10 @@ public static class LoginEndpoint
             
             string username=dto.Username;
             string password=dto.Password;
-            
+            if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return Results.BadRequest(new { message = "Invalid username or password" });
+            }
             var user= await db.Users.FirstOrDefaultAsync(u=>u.Username==dto.Username);
             if (user==null)
             {

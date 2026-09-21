@@ -1,5 +1,5 @@
 namespace WebBackend.Globals;
-public static class Lengths
+public static class Globals
 {
     public const int Username = 24;
     public const int Email = 254;

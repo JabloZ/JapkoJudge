@@ -25,16 +25,29 @@ public static class ChallengesEndpoint
     
         app.MapPost("api/createChallenge", async([FromForm] ChallengeDto dto, ClaimsPrincipal claims, JudgeDbContext db, IConfiguration config) =>
         {
+            
             try{
                 
                 string title=dto.Title;
                 string description=dto.Description;
+                if (title.Length >= Globals.ChallengeTitle)
+                {
+                    return Results.BadRequest(new{message=$"Title length should be maximum {Globals.ChallengeTitle} characters long."});
+                }
+                if (description.Length >= Globals.ChallengeTitle)
+                {
+                    return Results.BadRequest(new{message=$"Title length should be maximum {Globals.ChallengeDescription} characters long."});
+                }
                 var userId=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
                 
                 if (userId is null || !int.TryParse(userId, out var userIdClaim)){
                     return Results.BadRequest(new{message="User not found!"});
                 }
-
+                var challenges=await db.Challenges.Where(a=>a.OwnerId.ToString()==userId).ToListAsync();
+                if (challenges.Count()>100)
+                {
+                    return Results.Conflict(new{message="Reached limit of challenges per user (100)"});
+                }
                 var challenge=new Challenge
                 {
                     OwnerId=userIdClaim,
@@ -61,7 +74,7 @@ public static class ChallengesEndpoint
 
             */
             //
-            
+           
             var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id==id);
             if (challenge==null)
             {
@@ -71,32 +84,44 @@ public static class ChallengesEndpoint
             {
                 return Results.BadRequest(new{message="You are not an author!"});
             }
-            if (dto.Startfile.Length > Globals.Submission)
-            {
-                return Results.BadRequest(new { message = $"Start file too large. Max size: {Globals.Submission/1024} KB" });
-            }
-             if (dto.Testfile.Length > Globals.ChallengeTest)
-            {
-                return Results.BadRequest(new { message = $"Test file too large. Max size: {Globals.ChallengeTest/ 1024} KB" });
-            }
+            
 
             try{
-
+                if (dto.Startfile.Length > Globals.Submission)
+                {
+                    return Results.BadRequest(new { message = $"Start file too large. Max size: {Globals.Submission/1024} KB" });
+                }
+                if (dto.Testfile.Length > Globals.ChallengeTest)
+                {
+                    return Results.BadRequest(new { message = $"Test file too large. Max size: {Globals.ChallengeTest/ 1024} KB" });
+                }
                 var manifest=new ChallengeLanguage();
                 //todo - mapping with database record
 
-                var Language=await db.Languages.FirstOrDefaultAsync(l=>l.Extension==dto.Language);//not find async beacause not by id
+                var Language = await db.Languages.FirstOrDefaultAsync(l => l.Extension == dto.Language);
                 if (Language is null)
                 {
-                    return Results.NotFound(new{message="Language not found"});
+                    return Results.NotFound(new { message = "Language not found" });
                 }
-                manifest.LanguageId=Language.Id;
-                manifest.ChallengeId=id;
+                var alreadySupported = await db.ChallengesLanguages.AnyAsync(m => m.ChallengeId == id && m.LanguageId == Language.Id);
+                if (alreadySupported)
+                {
+                    return Results.Conflict(new { message = "This language is already supported" });
+                }
+                manifest.LanguageId = Language.Id;
+                manifest.ChallengeId = id;
+                
                 var uploadsRoot=config["FileStorage:UploadsPath"]!;//from env
                 var challengeDir=Path.Combine(uploadsRoot,"challenges",id.ToString(),manifest.LanguageId.ToString());
                 Directory.CreateDirectory(challengeDir); 
                 
                 var startExt=Path.GetExtension(dto.Startfile.FileName);
+                var exists=await db.Languages.FirstOrDefaultAsync(l=>l.Extension==startExt);
+                if (exists is null)
+                {
+                    return Results.NotFound(new{message="Extension not found in database"});
+                }
+                
                 var startPath=Path.Combine(challengeDir,$"start{startExt}");//create start.*
                 await using(var stream = File.Create(startPath))
                 {
@@ -105,6 +130,11 @@ public static class ChallengesEndpoint
                 manifest.StartCode=startPath;
 
                 var testExt=Path.GetExtension(dto.Testfile.FileName);
+                exists=await db.Languages.FirstOrDefaultAsync(l=>l.Extension==testExt);
+                if (exists is null)
+                {
+                    return Results.NotFound(new{message="Extension not found in database"});
+                }
                 var testPath=Path.Combine(challengeDir,$"test{testExt}");//create test.*
                 await using(var stream = File.Create(testPath))
                 {
@@ -141,6 +171,14 @@ public static class ChallengesEndpoint
                 }
                 challenge.Title=dto.Title;
                 challenge.Description=dto.Description;
+                if (challenge.Title.Length >= Globals.ChallengeTitle)
+                {
+                    return Results.BadRequest(new{message=$"Title length should be maximum {Globals.ChallengeTitle} characters long."});
+                }
+                if (challenge.Description.Length >= Globals.ChallengeTitle)
+                {
+                    return Results.BadRequest(new{message=$"Title length should be maximum {Globals.ChallengeDescription} characters long."});
+                }
                 challenge.Verified=false;
                 await db.SaveChangesAsync();
                 return Results.Ok(new{message="Succesfully edited challenge!"});
@@ -164,7 +202,15 @@ public static class ChallengesEndpoint
                 return Results.BadRequest(new{message="You are not an author!"});
             }
             try{
-
+                
+                if (dto.Startfile.Length > Globals.Submission)
+                {
+                    return Results.BadRequest(new { message = $"Start file too large. Max size: {Globals.Submission/1024} KB" });
+                }
+                if (dto.Testfile.Length > Globals.ChallengeTest)
+                {
+                    return Results.BadRequest(new { message = $"Test file too large. Max size: {Globals.ChallengeTest/ 1024} KB" });
+                }
                 var manifest=await db.ChallengesLanguages.FirstOrDefaultAsync(k=>k.ChallengeId==id && k.LanguageId==language_id);
                 //todo - mapping with database record
                 if (manifest is null)
@@ -186,6 +232,11 @@ public static class ChallengesEndpoint
                 {
                     return Results.NotFound(new{message="Language not found"});
                 }
+                var duplicateExists = await db.ChallengesLanguages.AnyAsync(m => m.ChallengeId == id && m.LanguageId == Language.Id && m.Id != manifest.Id);
+                if (duplicateExists)
+                {
+                    return Results.Conflict(new { message = "This language is already supported" });
+                }
                 manifest.LanguageId=Language.Id;
                 manifest.ChallengeId=id;
                 var uploadsRoot=config["FileStorage:UploadsPath"]!;//from env
@@ -193,6 +244,11 @@ public static class ChallengesEndpoint
                 Directory.CreateDirectory(challengeDir); 
                 
                 var startExt=Path.GetExtension(dto.Startfile.FileName);
+                var exists=await db.Languages.FirstOrDefaultAsync(l=>l.Extension==startExt);
+                if (exists is null)
+                {
+                    return Results.NotFound(new{message="Extension not found in database"});
+                }
                 var startPath=Path.Combine(challengeDir,$"start{startExt}");//create start.*
                 await using(var stream = File.Create(startPath))
                 {
@@ -201,6 +257,11 @@ public static class ChallengesEndpoint
                 manifest.StartCode=startPath;
 
                 var testExt=Path.GetExtension(dto.Testfile.FileName);
+                exists=await db.Languages.FirstOrDefaultAsync(l=>l.Extension==testExt);
+                if (exists is null) 
+                {
+                    return Results.NotFound(new{message="Extension not found in database"});
+                }
                 var testPath=Path.Combine(challengeDir,$"test{testExt}");//create test.*
                 await using(var stream = File.Create(testPath))
                 {
@@ -309,7 +370,7 @@ public static class ChallengesEndpoint
         //admin
         app.MapPost("api/post/verify_challenge/{id}",async(string id,DecisionDto dto,JudgeDbContext db, ClaimsPrincipal claims) =>
         {
-            var isAdmin = await AuthHelpers.IsAdminAsync(claims, db);
+            var isAdmin = await AuthHelper.IsUserAdmin(claims, db);
             if (isAdmin != true)
             {
                 return Results.Forbid();
@@ -337,7 +398,7 @@ public static class ChallengesEndpoint
         app.MapPost("api/post/change_difficulty/{id}",async(string id,DifficultyDto dto,JudgeDbContext db, ClaimsPrincipal claims) =>
         {
 
-            var isAdmin = await AuthHelpers.IsAdminAsync(claims, db);
+            var isAdmin = await AuthHelper.IsUserAdmin(claims, db);
             if (isAdmin != true)
             {
                 return Results.Forbid();
@@ -435,42 +496,38 @@ public static class ChallengesEndpoint
             return Results.Ok(challenge);
         }).RequireAuthorization();
         
-        app.MapGet("api/challenges/{id}/returnLanguages", async(int id, JudgeDbContext db,ClaimsPrincipal claims) =>
-        {
+
             
-            try{
-                var manifests=await db.ChallengesLanguages
-                .Where(k=>k.ChallengeId==id)
-                .Join(db.Languages, 
-                    c=>c.ChallengeId==id,
-                    l=l.Id,
-                    (cl,l) => new ManifestDto
-                    {
-                        Id = cl.Id,
-                        ChallengeId = cl.ChallengeId,
-                        LanguageId = cl.LanguageId,
-                        LanguageName = l.Name,
-                        AuthorId = viewer
-                    })
-                .ToListAsync();
-                var viewer=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                foreach(ManifestDto dto in manifests)
+        app.MapGet("api/challenges/{id}/returnLanguages", async(int id, JudgeDbContext db, ClaimsPrincipal claims) =>{
+        try
+        {
+        var viewer = claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        var manifests = await db.ChallengesLanguages
+            .Where(cl => cl.ChallengeId == id)
+            .Join(db.Languages,
+                cl => cl.LanguageId,
+                l => l.Id,
+                (cl, l) => new ManifestDto
                 {
-                    var language=await db.Languages.FirstOrDefaultAsync(k=>k.Id==dto.LanguageId);
-                    if (language is null)
-                    {
-                        return Results.NotFound(new{message="Language not found"});
-                    }
-                    dto.AuthorId=viewer;
-                    dto.LanguageName=language.Name;
-                }
-                return Results.Ok(new{message="Succesfully returned",Manifests=manifests});
-            }
-            catch(Exception err)
-            {
-                return Results.BadRequest(new{message=$"Error returning languages supported"});
-            }
+                    Id = cl.Id,
+                    ChallengeId = cl.ChallengeId,
+                    LanguageId = cl.LanguageId,
+                    LanguageName = l.Name,
+                    AuthorId = viewer
+                })
+            .ToListAsync();
+
+            return Results.Ok(new { message = "Succesfully returned", Manifests = manifests });
+        }
+        catch (Exception err)
+        {
+            return Results.Problem(statusCode: 500, detail: "Something went wrong returning languages");
+        }
         }).RequireAuthorization();
+
+
+
         app.MapGet("api/challenges/{id}/language/{language_id}/supportInfo", async(int id, int language_id, JudgeDbContext db) =>
         {
             
@@ -480,7 +537,7 @@ public static class ChallengesEndpoint
                 .Join(db.Languages,
                     cl => cl.LanguageId,
                     l => l.Id,
-                    (cl, l) => new ManifestPublicDto
+                    (cl, l) => new ManifestDto
                     {
                         Id = cl.Id,
                         ChallengeId = cl.ChallengeId,

@@ -29,7 +29,7 @@ public static class SubmissionsEndpoint
                 if (string.IsNullOrEmpty(dto.Code)){
                     return Results.BadRequest(new{message="Code cannot be empty"});
                 }
-                if (code.Length > Lengths.Submission)
+                if (code.Length > Globals.Submission)
                 {
                     return Results.BadRequest(new{message="Submission is too long!"});
                 }
@@ -50,7 +50,7 @@ public static class SubmissionsEndpoint
 
                 var submissionId = Guid.NewGuid();
                 string relativeDir = Path.Combine("tmp", "submissions", submissionId.ToString());
-                string submissionDir = Path.Combine(uploadsRoot, relativeDir);
+                submissionDir = Path.Combine(uploadsRoot, relativeDir);
                 Directory.CreateDirectory(submissionDir);
 
                 string solutionFileName = $"solution.{language.Extension}";
@@ -166,32 +166,23 @@ public static class SubmissionsEndpoint
         app.MapGet("api/submissions/get",async(JudgeDbContext db, ClaimsPrincipal claims)=>
         {
             var userId=claims.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            var submissions=await db.Submissions
-            .Select(k=>new SubmissionDto
-            {
-                Id=k.Id,
-                OwnerId=k.OwnerId,
-                ManifestId=k.ManifestId,
-                Code=k.Code,
-                Status=k.Status,
-                Message=k.Message,
-                MemoryUsed=k.MemoryUsed,
-                ExecutionTime=k.ExecutionTime,
-               
-            })
-            .Where(k=>k.OwnerId.ToString()==userId)
-            .ToListAsync();
-            if (submissions.Count == 0)
-            {
-                return Results.Ok(new{message="no results",submissions});    
-            }
-            foreach(SubmissionDto s in submissions)
-            {
-                var manifest=await db.ChallengesLanguages.FirstOrDefaultAsync(k=>k.Id==s.ManifestId);
-                var challenge=await db.Challenges.FirstOrDefaultAsync(k=>k.Id==manifest.ChallengeId);
-                s.ChallengeId=challenge.Id;
-                s.ChallengeTitle=challenge.Title;
-            }
+            var submissions = await db.Submissions
+                .Where(k => k.OwnerId.ToString() == userId)
+                .Join(db.ChallengesLanguages, s => s.ManifestId, m => m.Id, (s, m) => new { s, m })
+                .Join(db.Challenges, sm => sm.m.ChallengeId, c => c.Id, (sm, c) => new SubmissionDto
+                {
+                    Id = sm.s.Id,
+                    OwnerId = sm.s.OwnerId,
+                    ManifestId = sm.s.ManifestId,
+                    Code = sm.s.Code,
+                    Status = sm.s.Status,
+                    Message = sm.s.Message,
+                    MemoryUsed = sm.s.MemoryUsed,
+                    ExecutionTime = sm.s.ExecutionTime,
+                    ChallengeId = c.Id,
+                    ChallengeTitle = c.Title
+                })
+                .ToListAsync();
             return Results.Ok(new{message="success",submissions});    
         }).RequireAuthorization();
     }

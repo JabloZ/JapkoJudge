@@ -75,12 +75,8 @@ builder.Services.AddSingleton(sp =>
 });
 
 builder.Services.AddAuthorization();
-var app = builder.Build();
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<JudgeDbContext>();
-    db.Database.Migrate();
-}
+
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -95,7 +91,12 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 });
-
+var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<JudgeDbContext>();
+    db.Database.Migrate();
+}
 
 app.Urls.Add("http://0.0.0.0:8001"); //i added this port because .net automatically changed it to default from appsettings.json
 app.UseCors("AllowNextJs");
